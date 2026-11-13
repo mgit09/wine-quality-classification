@@ -50,3 +50,11 @@ python -m venv .venv
 
 pip install -r requirements.txt
 ```
+
+## Integrantes
+
+- João Braga
+- Lucas Mendes
+- Mateus
+- Ricardo Senna
+- Samuel Rozas
