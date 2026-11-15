@@ -51,7 +51,7 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-## Integrantes
+## Members
 
 - João Braga
 - Lucas Mendes
