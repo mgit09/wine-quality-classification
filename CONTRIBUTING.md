@@ -1,0 +1,66 @@
+# Contributing Guidelines
+
+Please follow the guidelines below when contributing to this project to ensure consistency, readability, and maintainability.
+
+## 1. Language
+
+All code must be written in English, including variable names, function names, class names, comments, docstrings, commits, and file names. Do not mix languages.
+
+## 2. Naming Conventions
+
+- Use `snake_case` for variables, functions, and file names.
+- Use complete and descriptive names, avoiding abbreviations.
+- Use `PascalCase` for class names.
+
+## 3. Code Formatting
+
+- Use **Black** as the automatic code formatter.
+- Set the maximum line length to **88 characters**.
+
+## 4. Docstrings
+
+- Use the **Google style** for all functions, including simple ones.
+- Always use triple double quotes (`"""`).
+
+## 5. Comments
+
+- Keep comments (`#`) short and use them only when relevant.
+- Start comments with an uppercase letter.
+- Use proper spelling and punctuation conventions.
+- Do not end comments with a period.
+
+## 6. Git Workflow
+
+- Direct commits to the `main` branch are not allowed.
+- Each contributor must work on their own branch.
+- Follow the branch naming convention: `type/description-with-hyphens`.
+- Submit changes through Pull Requests (PRs).
+- Each PR must be briefly reviewed by another contributor before merging.
+- Use **Squash and Merge** to integrate changes into `main`.
+
+## 7. Commit Messages
+
+- Keep commit messages short.
+- Write commit messages in English, using proper accents.
+- Do not end commit messages with a period.
+- Use standardized prefixes, such as:
+  - `feat:` — new features
+  - `fix:` — bug fixes
+  - `docs:` — documentation changes
+  - `refactor:` — code restructuring
+  - `chore:` — maintenance tasks
+
+## 8. Development Environment
+
+- Use a Python virtual environment (`venv`).
+- Manage dependencies through `requirements.txt`, with fixed versions.
+- All contributors must use the same Python version.
+
+## 9. Reproducibility
+
+Use `random_state=42` in all operations involving randomness whenever the parameter is available.
+
+## 10. File Paths
+
+- Always use relative paths with `pathlib`.
+- Never use absolute paths.
