@@ -24,13 +24,20 @@ wine-quality-classification/
 ├── data/
 │   ├── raw/
 │   └── processed/
+│
 ├── presentation/
 ├── reports/
 ├── results/
 ├── src/
+│
 ├── .gitignore
+├── .python-version
+│
+├── CONTRIBUTING.md
 ├── LICENSE
+├── pyproject.toml
 ├── README.md
+├── requirements-dev.txt
 └── requirements.txt
 ```
 
