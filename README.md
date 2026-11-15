@@ -1,32 +1,32 @@
-# Previsão da qualidade de vinho
+# Wine Quality Prediction
 
-Trabalho prático final da disciplina de Aprendizado de Máquina (2026/2), UFMG.
+Final project for the Machine Learning course (2026/2) at the Federal University of Minas Gerais (UFMG).
 
-O projeto investiga a qualidade de vinhos (tinto e branco) a partir de 11 propriedades físico-químicas, aplicando análise exploratória, análise discriminante, reamostragem, PCA e comparação de modelos de aprendizado de máquina.
+This project investigates wine quality (red and white wines) based on 11 physicochemical properties, applying exploratory data analysis, discriminant analysis, resampling techniques, Principal Component Analysis (PCA), and comparison of machine learning models.
 
 ## Status
 
-Em andamento...
+In progress...
 
-## Dados
+## Dataset
 
-- Banco: **wine_quality** (OpenML, id 287)
-- Link: [https://www.openml.org/d/287](https://www.openml.org/search?type=data&status=active&sort=nr_of_downloads&id=287)
-- 6497 observações, 11 variáveis de entrada e a variável-alvo `quality`
-- Referência: P. Cortez, A. Cerdeira, F. Almeida, T. Matos e J. Reis.
-  *Modeling wine preferences by data mining from physicochemical properties*.
-  Decision Support Systems, 47(4):547-553, 2009.
+- Dataset: **wine_quality** (OpenML, ID 287)
+- Link: [OpenML - Wine Quality Dataset](https://www.openml.org/d/287)
+- 6,497 observations, 11 input features, and the target variable `quality`.
+- Reference: P. Cortez, A. Cerdeira, F. Almeida, T. Matos, and J. Reis.  
+  *Modeling wine preferences by data mining from physicochemical properties*.  
+  Decision Support Systems, 47(4):547–553, 2009.
 
-## Estrutura do repositório
+## Repository Structure
 
 ```text
-analise-wine-quality/
-├── apresentacao/
-├── dados/
-│   ├── brutos/
-│   └── processados/
-├── relatorio/
-├── resultados/
+wine-quality-classification/
+├── data/
+│   ├── raw/
+│   └── processed/
+├── presentation/
+├── reports/
+├── results/
 ├── src/
 ├── .gitignore
 ├── LICENSE
@@ -34,7 +34,7 @@ analise-wine-quality/
 └── requirements.txt
 ```
 
-## Como executar
+## How to run
 
 ```bash
 git clone <url-do-repositorio>
