@@ -36,7 +36,7 @@ All code must be written in English, including variable names, function names, c
 - Follow the branch naming convention: `type/description-with-hyphens`.
 - Submit changes through Pull Requests (PRs).
 - Each PR must be briefly reviewed by another contributor before merging.
-- Use **Squash and Merge** to integrate changes into `main`.
+- Use **Merge commits** to integrate changes into `main`.
 
 ## 7. Commit Messages
 
