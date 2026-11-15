@@ -19,7 +19,8 @@ All code must be written in English, including variable names, function names, c
 
 ## 4. Docstrings
 
-- Use the **Google style** for all functions, including simple ones.
+- All functions and .py files must have docstrings, even the smallest/simplest ones.
+- Use the **Google style**.
 - Always use triple double quotes (`"""`).
 
 ## 5. Comments

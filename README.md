@@ -54,12 +54,12 @@ wine-quality-classification/
 ```bash
 # 1. Clone the repository:
 
-    git clone <url-do-repositorio>
-    cd analise-wine-quality
+    git clone <repository-url>
+    cd wine-quality-classification
 
 # 2. Create and activate the virtual environment (venv):
 
-    # Linux e macOS
+    # Linux and macOS
     python3 -m venv .venv
     source .venv/bin/activate
 
