@@ -51,17 +51,29 @@ All code must be written in English, including variable names, function names, c
   - `refactor:` — code restructuring
   - `chore:` — maintenance tasks
 
-## 8. Development Environment
+## 8. Pull Requests
+
+- Use a short, readable title in English, starting with a verb 
+  (e.g. "Add exploratory data analysis"), with no trailing period.
+- Edit the automatic title generated from the branch name.
+- Always fill in the description with a brief summary of the changes.
+- One PR per task, small enough to be reviewed quickly.
+- Run `pre-commit run --all-files` before opening.
+- Every PR needs at least one approval from another contributor.
+- Never merge your own PR without review.
+- Delete the branch after merging.
+
+## 9. Development Environment
 
 - Use a Python virtual environment (`venv`).
 - Manage dependencies through `requirements.txt`, with fixed versions.
 - All contributors must use the same Python version.
 
-## 9. Reproducibility
+## 10. Reproducibility
 
 Use `random_state=42` in all operations involving randomness whenever the parameter is available.
 
-## 10. File Paths
+## 11. File Paths
 
 - Always use relative paths with `pathlib`.
 - Never use absolute paths.
