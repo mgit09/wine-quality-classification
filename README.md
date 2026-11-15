@@ -4,9 +4,11 @@ Final project for the Machine Learning course (2026/2) at the Federal University
 
 This project investigates wine quality (red and white wines) based on 11 physicochemical properties, applying exploratory data analysis, discriminant analysis, resampling techniques, Principal Component Analysis (PCA), and comparison of machine learning models.
 
+
 ## Status
 
 In progress...
+
 
 ## Dataset
 
@@ -15,6 +17,7 @@ In progress...
 - 6,497 observations, 11 input features, and the target variable `quality`.
 - Reference: P. Cortez, A. Cerdeira, F. Almeida, T. Matos, and J. Reis.
     *Modeling wine preferences by data mining from physicochemical properties*.
+
 
 ## Repository Structure
 
@@ -44,6 +47,7 @@ wine-quality-classification/
 ├── requirements-dev.txt
 └── requirements.txt
 ```
+
 
 ## How to run
 
@@ -78,6 +82,41 @@ To manually run all configured checks:
 pre-commit run --all-files
 ```
 
+
+## Working with Branches
+
+All development must be done in separate branches. Direct commits to `main` are not allowed.
+
+**1. Before starting a new task, create a branch**
+
+```bash
+# Update your local `main` branch:
+
+    git switch main
+    git pull origin main
+
+# Create a new branch following the naming convention:
+
+    git switch -c type/branch-description
+```
+
+**2. Commit and push your changes**
+
+```bash
+# After making your changes:
+
+    git add .
+    git commit -m "prefix: describe your changes"
+    git push -u origin type/branch-description
+```
+
+**3. Open a Pull Request**
+
+On GitHub, open a Pull Request from your branch into `main`. Wait for the automated quality checks and request a review from another contributor. Once the required approval is obtained and all checks pass, your changes can be merged into `main`.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed contribution guidelines.
+
+
 ## Code Quality and Formatting
 
 This project uses **Black** for code formatting and **Ruff** for linting.
@@ -85,6 +124,7 @@ This project uses **Black** for code formatting and **Ruff** for linting.
 Both tools are integrated through **pre-commit**, which automatically runs them before each Git commit. Ruff applies available automatic fixes, while Black ensures consistent code formatting.
 
 No editor-specific configuration is required. The checks are managed at the repository level.
+
 
 ## Members
 
