@@ -6,6 +6,7 @@ import pandas as pd
 from matplotlib.figure import Figure
 
 from src.config import (
+    CLASS_COLUMN,
     FIGURES_DIR,
     QUALITY_CLASS_LABELS,
     TABLES_DIR,
@@ -13,7 +14,6 @@ from src.config import (
 )
 from src.data_loading import create_quality_class, load_raw_data
 
-CLASS_COLUMN = "quality_class"
 HISTOGRAM_BINS = 30
 GRID_COLUMNS = 4
 
