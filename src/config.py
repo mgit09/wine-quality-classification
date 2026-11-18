@@ -14,3 +14,8 @@ TARGET_COLUMN = "quality"
 # Quality scores up to 5 are low, 6 is medium and 7 or more is high
 QUALITY_CLASS_BINS = [-float("inf"), 5, 6, float("inf")]
 QUALITY_CLASS_LABELS = ["low", "medium", "high"]
+
+CLASS_COLUMN = "quality_class"
+TEST_SIZE = 0.2
+TRAIN_DATA_PATH = PROCESSED_DATA_DIR / "wine_quality_train.csv"
+TEST_DATA_PATH = PROCESSED_DATA_DIR / "wine_quality_test.csv"

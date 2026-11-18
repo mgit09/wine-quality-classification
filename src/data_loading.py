@@ -6,9 +6,11 @@ import arff
 import pandas as pd
 
 from src.config import (
+    CLASS_COLUMN,
     QUALITY_CLASS_BINS,
     QUALITY_CLASS_LABELS,
     RAW_DATA_PATH,
+    TARGET_COLUMN,
 )
 
 
@@ -48,3 +50,34 @@ def create_quality_class(quality_scores: pd.Series) -> pd.Series:
         labels=QUALITY_CLASS_LABELS,
         ordered=True,
     )
+
+
+def load_processed_data(file_path: Path) -> pd.DataFrame:
+    """Load a processed dataset (train or test) from a CSV file.
+
+    Args:
+        file_path: Path to the CSV file.
+
+    Returns:
+        DataFrame with the features, the quality score and the quality class.
+    """
+    return pd.read_csv(file_path)
+
+
+def split_features_and_target(
+    data: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.Series]:
+    """Separate the features from the target class.
+
+    The numeric quality score is dropped from the features because the class
+    is derived from it, and keeping it would leak the answer to the models.
+
+    Args:
+        data: DataFrame with the features, the score and the class.
+
+    Returns:
+        The features DataFrame and the quality class Series.
+    """
+    features = data.drop(columns=[TARGET_COLUMN, CLASS_COLUMN])
+    target = data[CLASS_COLUMN]
+    return features, target
