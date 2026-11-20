@@ -28,9 +28,11 @@ from src.config import (
 )
 from src.data_loading import load_processed_data, split_features_and_target
 from src.evaluation import (
+    calculate_auc,
     calculate_test_metrics,
     create_per_class_report,
     plot_confusion_matrix,
+    plot_roc_curves,
 )
 from src.outputs import save_figure, save_table
 
@@ -187,25 +189,23 @@ def plot_feature_importances(model: BaseEstimator, feature_names: list[str]) -> 
     save_figure(figure, "random_forest_importances.png")
 
 
-def create_baseline_predictions(
+def create_baseline_model(
     train_features: pd.DataFrame,
     train_target: pd.Series,
-    test_features: pd.DataFrame,
-) -> np.ndarray:
-    """Predict the most frequent class for every test wine.
+) -> BaseEstimator:
+    """Fit a model that always predicts the most frequent class.
 
     Any useful model must beat this reference.
 
     Args:
         train_features: Feature matrix of the training set.
         train_target: Quality class of each training row.
-        test_features: Feature matrix of the test set.
 
     Returns:
-        Array with the most frequent training class repeated for each wine.
+        Fitted baseline model.
     """
     baseline = DummyClassifier(strategy="most_frequent")
-    return baseline.fit(train_features, train_target).predict(test_features)
+    return baseline.fit(train_features, train_target)
 
 
 def main() -> None:
@@ -218,17 +218,25 @@ def main() -> None:
     )
 
     models = load_tuned_models()
-    predictions = {
-        "Majority class": create_baseline_predictions(
-            train_features, train_target, test_features
-        )
+    named_models = {
+        "Majority class": create_baseline_model(train_features, train_target),
+        **{MODEL_DISPLAY_NAMES[key]: model for key, model in models.items()},
     }
-    for model_key, model in models.items():
-        predictions[MODEL_DISPLAY_NAMES[model_key]] = model.predict(test_features)
+    predictions = {
+        name: model.predict(test_features) for name, model in named_models.items()
+    }
+    probabilities = {
+        name: model.predict_proba(test_features) for name, model in named_models.items()
+    }
+
+    # Every model must order its probability columns the same way
+    classes = list(named_models["Majority class"].classes_)
+    assert all(list(model.classes_) == classes for model in named_models.values())
 
     rows = {}
     for model_name, predicted in predictions.items():
         metrics = calculate_test_metrics(test_target, predicted)
+        metrics.update(calculate_auc(test_target, probabilities[model_name], classes))
         lower, upper = bootstrap_macro_f1_interval(test_target, predicted)
         metrics["f1_macro_ci_lower"] = lower
         metrics["f1_macro_ci_upper"] = upper
@@ -261,6 +269,14 @@ def main() -> None:
     tuning = pd.read_csv(TABLES_DIR / "tuning_best_parameters.csv", index_col=0)
     best_key = tuning[f"cv_{TUNING_SCORING}"].astype(float).idxmax()
     print(f"\nBest model by cross-validation: {MODEL_DISPLAY_NAMES[best_key]}")
+
+    # ROC curves of the real models, the baseline is the diagonal
+    plot_roc_curves(
+        test_target,
+        {name: p for name, p in probabilities.items() if name != "Majority class"},
+        classes,
+        "roc_curves.png",
+    )
 
     plot_feature_importances(models["random_forest"], train_features.columns.tolist())
 
