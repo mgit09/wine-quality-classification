@@ -33,13 +33,24 @@ def create_linear_discriminant_analysis() -> LinearDiscriminantAnalysis:
     return LinearDiscriminantAnalysis()
 
 
-def create_quadratic_discriminant_analysis() -> QuadraticDiscriminantAnalysis:
-    """Create a quadratic discriminant analysis model.
+def create_quadratic_discriminant_analysis() -> BaseEstimator:
+    """Create a quadratic discriminant analysis with standardized features.
+
+    QDA is scale invariant, but scikit-learn discards covariance directions
+    with variance below an absolute threshold. Features on small scales, such
+    as density, trigger it and the matrix is wrongly reported as singular.
+    Standardizing inside the pipeline avoids this without regularization.
 
     Returns:
-        Untrained QDA model that uses the class proportions as priors.
+        Untrained pipeline with a scaler and a QDA that uses the class
+        proportions as priors.
     """
-    return QuadraticDiscriminantAnalysis()
+    return Pipeline(
+        steps=[
+            ("scaler", StandardScaler()),
+            ("classifier", QuadraticDiscriminantAnalysis()),
+        ]
+    )
 
 
 def create_logistic_regression() -> BaseEstimator:
