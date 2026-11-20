@@ -7,12 +7,12 @@ from matplotlib.figure import Figure
 
 from src.config import (
     CLASS_COLUMN,
-    FIGURES_DIR,
     QUALITY_CLASS_LABELS,
     TABLES_DIR,
     TARGET_COLUMN,
 )
 from src.data_loading import create_quality_class, load_raw_data
+from src.outputs import save_figure
 
 HISTOGRAM_BINS = 30
 GRID_COLUMNS = 4
@@ -40,18 +40,6 @@ def create_subplot_grid(number_of_plots: int) -> tuple[Figure, np.ndarray]:
         unused_axis.axis("off")
 
     return figure, axes
-
-
-def save_figure(figure: Figure, file_name: str) -> None:
-    """Save a figure in the figures directory and close it.
-
-    Args:
-        figure: Figure to be saved.
-        file_name: Name of the output file, including the extension.
-    """
-    FIGURES_DIR.mkdir(parents=True, exist_ok=True)
-    figure.savefig(FIGURES_DIR / file_name, dpi=200, bbox_inches="tight")
-    plt.close(figure)
 
 
 def save_descriptive_statistics(data: pd.DataFrame) -> None:
