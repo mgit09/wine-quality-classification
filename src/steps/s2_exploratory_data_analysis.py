@@ -11,7 +11,11 @@ from src.config import (
     TABLES_DIR,
     TARGET_COLUMN,
 )
-from src.data_loading import create_quality_class, load_raw_data
+from src.data_loading import (
+    create_quality_class,
+    load_raw_data,
+    remove_duplicate_rows,
+)
 from src.outputs import save_figure
 
 HISTOGRAM_BINS = 30
@@ -206,7 +210,9 @@ def plot_scatter_by_class(
 
 def main() -> None:
     """Run the exploratory analysis and save its figures and tables."""
-    data = load_raw_data()
+    # Same duplicate removal as the preprocessing step, so the EDA describes
+    # the wines that the models will use
+    data = remove_duplicate_rows(load_raw_data())
     data[CLASS_COLUMN] = create_quality_class(data[TARGET_COLUMN])
 
     # Every column except the target and the derived class is a feature

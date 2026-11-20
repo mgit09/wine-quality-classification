@@ -12,7 +12,11 @@ from src.config import (
     TEST_SIZE,
     TRAIN_DATA_PATH,
 )
-from src.data_loading import create_quality_class, load_raw_data
+from src.data_loading import (
+    create_quality_class,
+    load_raw_data,
+    remove_duplicate_rows,
+)
 
 
 def validate_no_missing_values(data: pd.DataFrame) -> None:
@@ -31,28 +35,6 @@ def validate_no_missing_values(data: pd.DataFrame) -> None:
 
     if total_missing_values > 0:
         raise ValueError(f"Unexpected missing values found: {total_missing_values}")
-
-
-def remove_duplicate_rows(data: pd.DataFrame) -> pd.DataFrame:
-    """Remove duplicated rows, keeping the first occurrence.
-
-    This must happen before the train and test split, otherwise the same
-    wine could land in both sets and inflate the test metrics.
-
-    Args:
-        data: DataFrame with the dataset.
-
-    Returns:
-        DataFrame without duplicated rows and with a fresh index.
-    """
-    number_of_rows_before = len(data)
-    cleaned_data = data.drop_duplicates().reset_index(drop=True)
-
-    print(f"Rows before: {number_of_rows_before}")
-    print(f"Duplicated rows removed: {number_of_rows_before - len(cleaned_data)}")
-    print(f"Rows after: {len(cleaned_data)}")
-
-    return cleaned_data
 
 
 def print_class_proportions(name: str, data: pd.DataFrame) -> None:

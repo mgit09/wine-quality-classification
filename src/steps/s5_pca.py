@@ -204,7 +204,8 @@ def compare_models_with_and_without_pca(
         every model and preprocessing combination.
     """
     base_models = {
-        "LDA": create_linear_discriminant_analysis(),
+        # Same balanced settings as the tuned models of the final comparison
+        "LDA": create_linear_discriminant_analysis(use_equal_priors=True),
         "Logistic regression": create_logistic_regression(),
         "Random forest": create_random_forest(),
     }
