@@ -61,8 +61,8 @@ Required sections, in this order:
 |---|---|---|
 | Discriminant analysis: relevance, class separation, assumptions | `s4_discriminant_analysis.py`: skewness and standard deviation by class, correlated pairs, LDA vs QDA, `lda_projection.png` | done |
 | Resampling: cross-validation or bootstrap, justified | `evaluation.py` (stratified 5-fold CV on the training set) | partial: write the justification |
-| Distinguish resampling from class balancing | Explain: CV estimates performance, balancing changes the training weights or priors | todo |
-| Class balancing, if needed | `class_weight="balanced"` is hardcoded in logistic regression and random forest. A comparison with and without balancing is still missing | todo |
+| Distinguish resampling from class balancing | Explain: CV estimates performance, balancing changes the training weights or priors (the docstring of `s6_class_balancing.py` has the argument) | todo (write) |
+| Class balancing, if needed | `s6_class_balancing.py`: class weights (logistic regression, random forest) and equal priors (LDA) compared with the unbalanced version, `class_balancing_comparison.csv`. SMOTE was not tried (needs `imbalanced-learn`), say so in the limitations | done (not committed yet) |
 | PCA: need, preprocessing, number of components, variance, effect | `s5_pca.py`: standardized first, 8 components reach 90% (Kaiser criterion keeps 3), PCA lowered every model in CV macro F1, so it is not used in the final models | done (not committed yet) |
 
 ### 3.4 Training and model comparison
@@ -78,7 +78,20 @@ Required sections, in this order:
 | Discussion of differences, limitations and fit to the goal | Report text | todo |
 | Best model chosen from the metrics and the context | Report text | todo |
 
-Results already available (5-fold CV on the training set, macro F1):
+Balancing results (5-fold CV on the training set, out-of-fold predictions):
+
+| Model | Balancing | Accuracy | Macro F1 | Recall high | Recall medium |
+|---|---|---|---|---|---|
+| LDA | class proportions as priors | 0.576 | 0.554 | 0.388 | 0.613 |
+| LDA | equal priors | 0.548 | 0.545 | 0.706 | 0.362 |
+| Logistic regression | no balancing | 0.576 | 0.549 | 0.352 | 0.621 |
+| Logistic regression | balanced weights | 0.549 | 0.544 | 0.713 | 0.348 |
+| Random forest | no balancing | 0.604 | 0.581 | 0.402 | 0.634 |
+| Random forest | balanced weights | 0.601 | 0.597 | 0.602 | 0.519 |
+
+Balancing doubles the recall of the high class for LDA and logistic regression, at the cost of the medium class and about 3 points of accuracy. The report must state this trade-off.
+
+PCA results (5-fold CV on the training set, macro F1):
 
 | Model | Original features | PCA (8 components) |
 |---|---|---|
