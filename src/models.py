@@ -11,7 +11,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-from src.config import RANDOM_STATE
+from src.config import QUALITY_CLASS_LABELS, RANDOM_STATE
 
 # Keys use the "classifier__" prefix because the model is inside a pipeline
 LOGISTIC_REGRESSION_PARAMETER_GRID = {
@@ -25,13 +25,23 @@ RANDOM_FOREST_PARAMETER_GRID = {
 }
 
 
-def create_linear_discriminant_analysis() -> LinearDiscriminantAnalysis:
+def create_linear_discriminant_analysis(
+    use_equal_priors: bool = False,
+) -> LinearDiscriminantAnalysis:
     """Create a linear discriminant analysis model.
 
+    Args:
+        use_equal_priors: If True, every class gets the same prior probability,
+            which is how discriminant analysis balances the classes.
+
     Returns:
-        Untrained LDA model that uses the class proportions as priors.
+        Untrained LDA model. By default it uses the class proportions as priors.
     """
-    return LinearDiscriminantAnalysis()
+    priors = None
+    if use_equal_priors:
+        number_of_classes = len(QUALITY_CLASS_LABELS)
+        priors = [1 / number_of_classes] * number_of_classes
+    return LinearDiscriminantAnalysis(priors=priors)
 
 
 def create_quadratic_discriminant_analysis() -> BaseEstimator:
@@ -54,14 +64,20 @@ def create_quadratic_discriminant_analysis() -> BaseEstimator:
     )
 
 
-def create_logistic_regression() -> BaseEstimator:
+def create_logistic_regression(
+    class_weight: str | None = "balanced",
+) -> BaseEstimator:
     """Create a logistic regression with standardized features.
 
     Standardization is part of the pipeline so that, inside cross-validation,
     it is learned only from the training folds.
 
+    Args:
+        class_weight: "balanced" to weight each class inversely to its size,
+            or None to weight all classes equally.
+
     Returns:
-        Untrained pipeline with a scaler and a balanced logistic regression.
+        Untrained pipeline with a scaler and a logistic regression.
     """
     return Pipeline(
         steps=[
@@ -69,7 +85,7 @@ def create_logistic_regression() -> BaseEstimator:
             (
                 "classifier",
                 LogisticRegression(
-                    class_weight="balanced",
+                    class_weight=class_weight,
                     max_iter=1000,
                     random_state=RANDOM_STATE,
                 ),
@@ -78,17 +94,21 @@ def create_logistic_regression() -> BaseEstimator:
     )
 
 
-def create_random_forest() -> BaseEstimator:
-    """Create a random forest with balanced class weights.
+def create_random_forest(class_weight: str | None = "balanced") -> BaseEstimator:
+    """Create a random forest.
 
     No scaling is applied because decision trees are not affected by the
     scale of the features.
+
+    Args:
+        class_weight: "balanced" to weight each class inversely to its size,
+            or None to weight all classes equally.
 
     Returns:
         Untrained random forest.
     """
     return RandomForestClassifier(
-        class_weight="balanced",
+        class_weight=class_weight,
         random_state=RANDOM_STATE,
         n_jobs=-1,
     )

@@ -12,7 +12,7 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
 )
-from sklearn.model_selection import StratifiedKFold, cross_validate
+from sklearn.model_selection import StratifiedKFold, cross_val_predict, cross_validate
 
 from src.config import (
     CROSS_VALIDATION_FOLDS,
@@ -71,6 +71,32 @@ def cross_validate_model(
         summary[metric_name] = {"mean": scores.mean(), "std": scores.std()}
 
     return pd.DataFrame(summary).T
+
+
+def cross_validated_predictions(
+    model: BaseEstimator,
+    features: pd.DataFrame,
+    target: pd.Series,
+) -> pd.Series:
+    """Predict the class of every training row with stratified cross-validation.
+
+    Each row is predicted by a model that did not see it during training.
+
+    Args:
+        model: Untrained model or pipeline.
+        features: Feature matrix of the training set.
+        target: Quality class of each row.
+
+    Returns:
+        Series with the out-of-fold prediction of each row.
+    """
+    predictions = cross_val_predict(
+        model,
+        features,
+        target,
+        cv=create_cross_validator(),
+    )
+    return pd.Series(predictions, index=target.index)
 
 
 def calculate_test_metrics(
