@@ -113,9 +113,37 @@ def plot_feature_boxplots(
     for axis, column in zip(axes, feature_columns):
         axis.boxplot(data[column])
         axis.set_title(column)
+        axis.set_xticks([])
 
     figure.tight_layout()
     save_figure(figure, "feature_boxplots.png")
+
+
+def plot_feature_boxplots_by_class(
+    data: pd.DataFrame,
+    feature_columns: list[str],
+) -> None:
+    """Plot the boxplot of every feature for each quality class.
+
+    Features whose distribution shifts between classes help to separate them.
+
+    Args:
+        data: DataFrame with the quality class column.
+        feature_columns: Names of the feature columns.
+    """
+    figure, axes = create_subplot_grid(len(feature_columns))
+
+    for axis, column in zip(axes, feature_columns):
+        values_by_class = [
+            data.loc[data[CLASS_COLUMN] == label, column]
+            for label in QUALITY_CLASS_LABELS
+        ]
+        axis.boxplot(values_by_class)
+        axis.set_xticklabels(QUALITY_CLASS_LABELS)
+        axis.set_title(column)
+
+    figure.tight_layout()
+    save_figure(figure, "feature_boxplots_by_class.png")
 
 
 def plot_correlation_matrix(
@@ -178,6 +206,32 @@ def select_top_correlated_features(
     return strongest.head(number_of_features).index.tolist()
 
 
+def select_most_correlated_pairs(
+    data: pd.DataFrame,
+    feature_columns: list[str],
+    number_of_pairs: int = 3,
+) -> list[tuple[str, str]]:
+    """Select the pairs of features with the strongest linear relationship.
+
+    Args:
+        data: DataFrame with the dataset.
+        feature_columns: Names of the feature columns.
+        number_of_pairs: How many pairs to return.
+
+    Returns:
+        Pairs of feature names, from the largest absolute correlation down.
+    """
+    # Keep only the upper triangle so each pair appears once
+    correlations = data[feature_columns].corr().abs()
+    upper_triangle = np.triu(np.ones(correlations.shape, dtype=bool), k=1)
+    pair_correlations = correlations.where(upper_triangle).stack()
+
+    strongest = pair_correlations.sort_values(ascending=False).head(number_of_pairs)
+    print("\nMost correlated feature pairs (absolute correlation):")
+    print(strongest.round(3))
+    return list(strongest.index)
+
+
 def plot_scatter_by_class(
     data: pd.DataFrame,
     horizontal_column: str,
@@ -224,11 +278,19 @@ def main() -> None:
     plot_class_distribution(data)
     plot_feature_histograms(data, feature_columns)
     plot_feature_boxplots(data, feature_columns)
+    plot_feature_boxplots_by_class(data, feature_columns)
     plot_correlation_matrix(data, feature_columns)
 
-    # Scatter plot of the two features most related to quality
+    # Scatter plots: the two features most related to quality, then the
+    # pairs of features most related to each other (redundancy)
     top_features = select_top_correlated_features(data, feature_columns)
-    plot_scatter_by_class(data, top_features[0], top_features[1])
+    scatter_pairs = [(top_features[0], top_features[1])]
+    for pair in select_most_correlated_pairs(data, feature_columns):
+        if pair not in scatter_pairs and pair[::-1] not in scatter_pairs:
+            scatter_pairs.append(pair)
+
+    for horizontal_column, vertical_column in scatter_pairs:
+        plot_scatter_by_class(data, horizontal_column, vertical_column)
 
 
 if __name__ == "__main__":
