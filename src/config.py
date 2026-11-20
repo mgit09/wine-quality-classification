@@ -38,6 +38,8 @@ QUALITY_CLASS_LABELS = ["low", "medium", "high"]
 # Train and test split and validation
 TEST_SIZE = 0.2
 CROSS_VALIDATION_FOLDS = 5
+# Repetitions with different shuffles, to measure how stable an estimate is
+RESAMPLING_REPEATS = 10
 
 # --------------------------------------------------
 # Hyperparameter tuning
