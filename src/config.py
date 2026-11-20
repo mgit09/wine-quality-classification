@@ -15,6 +15,7 @@ RESULTS_DIR = PROJECT_ROOT / "results"
 PROCESSED_DATA_DIR = DATA_DIR / "processed"
 FIGURES_DIR = RESULTS_DIR / "figures"
 TABLES_DIR = RESULTS_DIR / "tables"
+MODELS_DIR = RESULTS_DIR / "models"
 
 # --------------------------------------------------
 # Data files
@@ -37,6 +38,11 @@ QUALITY_CLASS_LABELS = ["low", "medium", "high"]
 # Train and test split and validation
 TEST_SIZE = 0.2
 CROSS_VALIDATION_FOLDS = 5
+
+# --------------------------------------------------
+# Hyperparameter tuning
+# Macro F1 gives the same weight to every class, including the smaller ones
+TUNING_SCORING = "f1_macro"
 
 # --------------------------------------------------
 # PCA

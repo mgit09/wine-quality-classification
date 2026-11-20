@@ -13,6 +13,12 @@ from sklearn.preprocessing import StandardScaler
 
 from src.config import QUALITY_CLASS_LABELS, RANDOM_STATE
 
+# Shrinkage needs the lsqr solver, and None keeps the plain LDA estimate
+LINEAR_DISCRIMINANT_ANALYSIS_PARAMETER_GRID = {
+    "classifier__solver": ["lsqr"],
+    "classifier__shrinkage": [None, "auto", 0.1, 0.3, 0.5],
+}
+
 # Keys use the "classifier__" prefix because the model is inside a pipeline
 LOGISTIC_REGRESSION_PARAMETER_GRID = {
     "classifier__C": [0.01, 0.1, 1, 10, 100],
@@ -42,6 +48,33 @@ def create_linear_discriminant_analysis(
         number_of_classes = len(QUALITY_CLASS_LABELS)
         priors = [1 / number_of_classes] * number_of_classes
     return LinearDiscriminantAnalysis(priors=priors)
+
+
+def create_scaled_linear_discriminant_analysis(
+    use_equal_priors: bool = False,
+) -> BaseEstimator:
+    """Create a linear discriminant analysis with standardized features.
+
+    Scikit-learn only standardizes the features itself for shrinkage="auto".
+    A numeric shrinkage pulls the raw covariance toward its average variance,
+    which the sulfur dioxide columns dominate, so the scaler is needed to tune
+    the shrinkage fairly.
+
+    Args:
+        use_equal_priors: If True, every class gets the same prior probability.
+
+    Returns:
+        Untrained pipeline with a scaler and an LDA.
+    """
+    return Pipeline(
+        steps=[
+            ("scaler", StandardScaler()),
+            (
+                "classifier",
+                create_linear_discriminant_analysis(use_equal_priors),
+            ),
+        ]
+    )
 
 
 def create_quadratic_discriminant_analysis() -> BaseEstimator:
