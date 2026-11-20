@@ -2,20 +2,40 @@
 
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-RAW_DATA_PATH = PROJECT_ROOT / "data" / "raw" / "wine_quality.arff"
-PROCESSED_DATA_DIR = PROJECT_ROOT / "data" / "processed"
-FIGURES_DIR = PROJECT_ROOT / "results" / "figures"
-TABLES_DIR = PROJECT_ROOT / "results" / "tables"
-
+# --------------------------------------------------
+# Reproducibility
 RANDOM_STATE = 42
-TARGET_COLUMN = "quality"
 
-# Quality scores up to 5 are low, 6 is medium and 7 or more is high
+# --------------------------------------------------
+# Directories
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DATA_DIR = PROJECT_ROOT / "data"
+RESULTS_DIR = PROJECT_ROOT / "results"
+
+PROCESSED_DATA_DIR = DATA_DIR / "processed"
+FIGURES_DIR = RESULTS_DIR / "figures"
+TABLES_DIR = RESULTS_DIR / "tables"
+
+# --------------------------------------------------
+# Data files
+RAW_DATA_PATH = DATA_DIR / "raw" / "wine_quality.arff"
+TRAIN_DATA_PATH = PROCESSED_DATA_DIR / "wine_quality_train.csv"
+TEST_DATA_PATH = PROCESSED_DATA_DIR / "wine_quality_test.csv"
+
+# --------------------------------------------------
+# Columns
+TARGET_COLUMN = "quality"
+CLASS_COLUMN = "quality_class"
+
+# --------------------------------------------------
+# Quality classes
+# Scores up to 5 are low, 6 is medium and 7 or more is high
 QUALITY_CLASS_BINS = [-float("inf"), 5, 6, float("inf")]
 QUALITY_CLASS_LABELS = ["low", "medium", "high"]
 
-CLASS_COLUMN = "quality_class"
+# --------------------------------------------------
+# Train and test split and validation
 TEST_SIZE = 0.2
-TRAIN_DATA_PATH = PROCESSED_DATA_DIR / "wine_quality_train.csv"
-TEST_DATA_PATH = PROCESSED_DATA_DIR / "wine_quality_test.csv"
+CROSS_VALIDATION_FOLDS = 5
+
+# --------------------------------------------------
