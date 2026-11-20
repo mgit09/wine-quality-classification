@@ -1,6 +1,7 @@
 """Definition of the classification models and their hyperparameter grids."""
 
 from sklearn.base import BaseEstimator
+from sklearn.decomposition import PCA
 from sklearn.discriminant_analysis import (
     LinearDiscriminantAnalysis,
     QuadraticDiscriminantAnalysis,
@@ -90,4 +91,35 @@ def create_random_forest() -> BaseEstimator:
         class_weight="balanced",
         random_state=RANDOM_STATE,
         n_jobs=-1,
+    )
+
+
+def add_pca(model: BaseEstimator, number_of_components: int) -> Pipeline:
+    """Insert a PCA step right before the classifier of a model.
+
+    The features are standardized before the PCA, because the components
+    follow the variance and would otherwise be dominated by large-scale
+    features such as the sulfur dioxide.
+
+    Args:
+        model: Model or pipeline whose last step is the classifier.
+        number_of_components: How many principal components to keep.
+
+    Returns:
+        Untrained pipeline with the scaler, the PCA and the classifier.
+    """
+    pca = PCA(n_components=number_of_components, random_state=RANDOM_STATE)
+
+    # Pipelines already have a scaler, so the PCA goes before the classifier
+    if isinstance(model, Pipeline):
+        steps = list(model.steps)
+        steps.insert(len(steps) - 1, ("pca", pca))
+        return Pipeline(steps)
+
+    return Pipeline(
+        steps=[
+            ("scaler", StandardScaler()),
+            ("pca", pca),
+            ("classifier", model),
+        ]
     )

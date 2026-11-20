@@ -39,3 +39,8 @@ TEST_SIZE = 0.2
 CROSS_VALIDATION_FOLDS = 5
 
 # --------------------------------------------------
+# PCA
+# Share of the variance that the kept components must explain
+PCA_VARIANCE_THRESHOLD = 0.90
+
+# --------------------------------------------------
