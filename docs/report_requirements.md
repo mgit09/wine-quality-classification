@@ -75,8 +75,9 @@ Required sections, in this order:
 | Reason for each method and its main parameters | Parameter grids in `models.py`, search results in `tuning_<model>.csv` and `tuning_best_parameters.csv` | partial: write the reasons |
 | Training and evaluation procedure | Grid search with stratified 5-fold CV on the training set, scored by macro F1 (`s7_model_tuning.py`). One final evaluation on the test set (`s8_final_evaluation.py`) | done |
 | Same conditions for all models | Same split, same CV splitter, same scoring, balancing on for all (`s7_model_tuning.py`) | done |
-| Accuracy, precision, recall, F1 | `test_comparison.csv` (macro averages and a majority-class baseline) and `test_report_<model>.csv` (per class) | done (not committed yet) |
-| Confusion matrix | `confusion_matrix_<model>.png`, one per model | done (not committed yet) |
+| Accuracy, precision, recall, F1 | `test_comparison.csv` (macro averages and a majority-class baseline) and `test_report_<model>.csv` (per class) | done |
+| ROC curve and AUC (taught in Aula 11) | `roc_curves.png` (one-vs-rest, one panel per class) and the `auc_*` columns of `test_comparison.csv` | done |
+| Confusion matrix | `confusion_matrix_<model>.png`, one per model | done |
 | Discussion of differences, limitations and fit to the goal | Report text | todo |
 | Best model chosen from the metrics and the context | Report text | todo |
 
@@ -105,12 +106,14 @@ These scores are optimistic, because the same folds choose the parameters and sc
 
 Test set results (1064 wines, used once):
 
-| Model | Accuracy | Macro precision | Macro recall | Macro F1 | 95% CI of macro F1 |
-|---|---|---|---|---|---|
-| Majority class | 0.437 | 0.146 | 0.333 | 0.203 | 0.193 to 0.212 |
-| LDA | 0.587 | 0.577 | 0.616 | 0.581 | 0.550 to 0.610 |
-| Logistic regression | 0.571 | 0.561 | 0.602 | 0.564 | 0.534 to 0.593 |
-| Random forest | 0.635 | 0.624 | 0.631 | 0.627 | 0.595 to 0.656 |
+| Model | Accuracy | Macro precision | Macro recall | Macro F1 | 95% CI of macro F1 | Macro AUC |
+|---|---|---|---|---|---|---|
+| Majority class | 0.437 | 0.146 | 0.333 | 0.203 | 0.193 to 0.212 | 0.500 |
+| LDA | 0.587 | 0.577 | 0.616 | 0.581 | 0.550 to 0.610 | 0.775 |
+| Logistic regression | 0.571 | 0.561 | 0.602 | 0.564 | 0.534 to 0.593 | 0.771 |
+| Random forest | 0.635 | 0.624 | 0.631 | 0.627 | 0.595 to 0.656 | 0.808 |
+
+AUC is one-vs-rest (each class against the other two, using the predicted probability of that class), averaged over the classes. Per class, the random forest scores 0.861 (high), 0.856 (low) and 0.707 (medium), LDA 0.834, 0.828 and 0.663, logistic regression 0.830, 0.828 and 0.655. The ranking of the models is the same as with the F1, and the medium class is the hardest for all of them: it sits between the other two, so no threshold separates it well. The ROC curves show the whole trade-off between true and false positives, while the confusion matrices show one operating point, the one chosen by the class weights or equal priors.
 
 Paired bootstrap of the macro F1 difference (`test_paired_differences.csv`): random forest beats LDA by 0.046 (95% interval 0.016 to 0.076) and logistic regression by 0.062 (0.032 to 0.092), so its lead is real even though the separate intervals overlap. LDA vs logistic regression is borderline (0.016, interval 0.000 to 0.034). The random forest is also the best model by cross-validation, which is how the model is chosen without touching the test set.
 
