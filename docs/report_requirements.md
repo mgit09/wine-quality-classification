@@ -50,7 +50,8 @@ Required sections, in this order:
 | Correlation matrix | `correlation_matrix.png` | done |
 | Interpretation of every figure | Report text | todo |
 | Missing values | `s3_preprocessing.py` validates there are none | done |
-| Outliers: detection and decision | Boxplots exist, but no decision is recorded (keep, cap or remove, and why) | partial |
+| Outliers: detection and decision | `feature_boxplots.png`, and `s9_preprocessing_experiments.py` (`preprocessing_experiments.csv`). Decision: **keep every wine**. 54 of 4254 training rows lie beyond 5 standard deviations, and 21.9% of the training rows have at least one IQR outlier, so removal is not viable. Removing the extreme rows changed the CV macro F1 by -0.004 to -0.001 for LDA, logistic regression and random forest, and only helped QDA (+0.021, fold std 0.014), which is not in the final comparison. The extreme points are real measurements that the models must handle, and nothing proves they are errors | done |
+| Skewed features: detection and decision | Skewness by class in `skewness_by_class.csv`. Six features have skewness above 1 (chlorides 5.5, residual sugar 1.8, sulphates 1.8, fixed acidity 1.7, free SO₂ 1.5, volatile acidity 1.5). Decision: **no transform**. A log transform changed the CV macro F1 by +0.006 (LDA), +0.005 (logistic regression), 0.000 (QDA) and -0.001 (random forest), all within the fold std (0.005 to 0.013). LDA assumptions stay approximately met, and the report must say so | done |
 | Class imbalance | `class_distribution.png` | done |
 | Categorical encoding | Not needed, all features are numeric: say so explicitly | todo (write) |
 | Scaling | Done inside the model pipelines, to avoid leakage: explain | todo (write) |
@@ -124,6 +125,17 @@ PCA results (5-fold CV on the training set, macro F1):
 | Random forest (balanced) | 0.597 | 0.567 |
 
 All three models use the balanced settings of the final comparison, so these numbers are comparable with the tuning and test tables. QDA was only compared with LDA in the discriminant analysis step (`s4`), where it scored 0.522 against LDA's 0.554 with class-proportion priors, and was not carried to the final comparison because LDA beat it and the two share the same assumptions.
+
+Preprocessing experiments (5-fold CV on the training set, macro F1 change against the untreated data, treatments learned inside each fold and every variant scored on the same wines):
+
+| Model | Remove extremes (z > 5) | Log of skewed features | Both | Fold std |
+|---|---|---|---|---|
+| LDA (equal priors) | -0.001 | +0.006 | +0.007 | 0.005 |
+| QDA | +0.021 | 0.000 | +0.019 | 0.013 |
+| Logistic regression (balanced) | -0.002 | +0.005 | +0.003 | 0.006 |
+| Random forest (balanced) | -0.004 | -0.001 | -0.005 | 0.018 |
+
+Rule fixed before the run: adopt a treatment only if it beats the fold std for most models. None did, so the data is kept as is. The test set was not used.
 
 ## 4. Points that must appear in the text
 

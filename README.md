@@ -45,7 +45,8 @@ wine-quality-classification/
 │   │   ├── s5_pca.py
 │   │   ├── s6_class_balancing.py
 │   │   ├── s7_model_tuning.py
-│   │   └── s8_final_evaluation.py
+│   │   ├── s8_final_evaluation.py
+│   │   └── s9_preprocessing_experiments.py
 │   ├── config.py
 │   ├── data_loading.py
 │   ├── evaluation.py
@@ -114,6 +115,7 @@ python -m src.steps.s5_pca
 python -m src.steps.s6_class_balancing
 python -m src.steps.s7_model_tuning
 python -m src.steps.s8_final_evaluation
+python -m src.steps.s9_preprocessing_experiments
 ```
 
 ## Working with Branches
