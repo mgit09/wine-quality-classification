@@ -55,3 +55,10 @@ CONFIDENCE_LEVEL = 0.95
 PCA_VARIANCE_THRESHOLD = 0.90
 
 # --------------------------------------------------
+# Preprocessing experiments
+# A row is extreme if any feature is farther than this many standard deviations
+EXTREME_Z_SCORE = 5
+# Features with a skewness above this value get a log transform
+SKEWNESS_THRESHOLD = 1.0
+
+# --------------------------------------------------
