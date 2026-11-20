@@ -34,7 +34,19 @@ wine-quality-classification/
 ├── presentation/
 ├── reports/
 ├── results/
+│   ├── figures/
+│   └── tables/
 ├── src/
+│   ├── steps/
+│   │   ├── s1_inspect_data.py
+│   │   ├── s2_exploratory_data_analysis.py
+│   │   ├── s3_preprocessing.py
+│   │   └── s4_discriminant_analysis.py
+│   ├── config.py
+│   ├── data_loading.py
+│   ├── evaluation.py
+│   ├── models.py
+│   └── outputs.py
 │
 ├── .gitignore
 ├── .pre-commit-config.yaml
@@ -49,7 +61,7 @@ wine-quality-classification/
 ```
 
 
-## How to run
+## Setup
 
 ```bash
 # 1. Clone the repository:
@@ -82,6 +94,19 @@ To manually run all configured checks:
 pre-commit run --all-files
 ```
 
+
+## How to run
+
+The project is organized into sequential steps, each responsible for a stage of the workflow.
+
+Run the commands below from the repository root, with the virtual environment activated.
+
+```bash
+python -m src.steps.s1_inspect_data
+python -m src.steps.s2_exploratory_data_analysis
+python -m src.steps.s3_preprocessing
+python -m src.steps.s4_discriminant_analysis
+```
 
 ## Working with Branches
 
