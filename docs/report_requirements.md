@@ -62,17 +62,17 @@ Required sections, in this order:
 | Discriminant analysis: relevance, class separation, assumptions | `s4_discriminant_analysis.py`: skewness and standard deviation by class, correlated pairs, LDA vs QDA, `lda_projection.png` | done |
 | Resampling: cross-validation or bootstrap, justified | `evaluation.py` (stratified 5-fold CV on the training set) | partial: write the justification |
 | Distinguish resampling from class balancing | Explain: CV estimates performance, balancing changes the training weights or priors (the docstring of `s6_class_balancing.py` has the argument) | todo (write) |
-| Class balancing, if needed | `s6_class_balancing.py`: class weights (logistic regression, random forest) and equal priors (LDA) compared with the unbalanced version, `class_balancing_comparison.csv`. SMOTE was not tried (needs `imbalanced-learn`), say so in the limitations | done (not committed yet) |
-| PCA: need, preprocessing, number of components, variance, effect | `s5_pca.py`: standardized first, 8 components reach 90% (Kaiser criterion keeps 3), PCA lowered every model in CV macro F1, so it is not used in the final models | done (not committed yet) |
+| Class balancing, if needed | `s6_class_balancing.py`: class weights (logistic regression, random forest) and equal priors (LDA) compared with the unbalanced version, `class_balancing_comparison.csv`. SMOTE was not tried (needs `imbalanced-learn`), say so in the limitations | done |
+| PCA: need, preprocessing, number of components, variance, effect | `s5_pca.py`: standardized first, 8 components reach 90% (Kaiser criterion keeps 3), PCA lowered every model in CV macro F1, so it is not used in the final models | done |
 
 ### 3.4 Training and model comparison
 
 | Requirement | Support in the repo | Status |
 |---|---|---|
-| At least 2 methods, one taught in class, both suited to the task | LDA, logistic regression, random forest in `models.py` | partial |
-| Reason for each method and its main parameters | Parameter grids in `models.py` | todo (write) |
-| Training and evaluation procedure | CV on the training set, final evaluation once on the test set | todo (a step that does it) |
-| Same conditions for all models | Same split, same CV splitter, same scoring | todo |
+| At least 2 methods, one taught in class, both suited to the task | LDA, logistic regression, random forest in `models.py`, all tuned in `s7_model_tuning.py` | done (not committed yet) |
+| Reason for each method and its main parameters | Parameter grids in `models.py`, search results in `tuning_<model>.csv` and `tuning_best_parameters.csv` | partial: write the reasons |
+| Training and evaluation procedure | Grid search with stratified 5-fold CV on the training set, scored by macro F1 (`s7_model_tuning.py`). The final evaluation on the test set is still missing | partial |
+| Same conditions for all models | Same split, same CV splitter, same scoring, balancing on for all (`s7_model_tuning.py`) | done (not committed yet) |
 | Accuracy, precision, recall, F1 | `evaluation.py` helpers | partial |
 | Confusion matrix | `plot_confusion_matrix` in `evaluation.py` | partial |
 | Discussion of differences, limitations and fit to the goal | Report text | todo |
@@ -91,6 +91,16 @@ Balancing results (5-fold CV on the training set, out-of-fold predictions):
 
 Balancing doubles the recall of the high class for LDA and logistic regression, at the cost of the medium class and about 3 points of accuracy. The report must state this trade-off.
 
+Tuning results (grid search, 5-fold CV on the training set, macro F1):
+
+| Model | Best parameters | CV macro F1 |
+|---|---|---|
+| LDA (equal priors) | `shrinkage="auto"`, `lsqr` solver | 0.547 |
+| Logistic regression (balanced) | `C=100` | 0.544 |
+| Random forest (balanced) | no depth limit, `min_samples_leaf=1`, 500 trees | 0.600 |
+
+These scores are optimistic, because the same folds choose the parameters and score them. Only the test set gives the final performance. LDA and logistic regression are almost flat across their grids, so tuning changes little for them. The random forest's best setting is at the edge of its grid.
+
 PCA results (5-fold CV on the training set, macro F1):
 
 | Model | Original features | PCA (8 components) |
@@ -107,6 +117,8 @@ PCA results (5-fold CV on the training set, macro F1):
 - Splitting before any scaling, PCA or resampling, and fitting those inside the CV folds, to avoid leakage.
 - The 3-class cut-off is a choice of the group, and it discards the order of the grades.
 - Red and white wines are mixed and the dataset has no column telling them apart.
+- Tuned CV scores are optimistic. The test set is used once, at the end, for the real estimate.
+- LDA needs standardized features to tune a numeric shrinkage: scikit-learn only standardizes for `shrinkage="auto"`. Without a scaler, the numeric values collapsed the model (macro F1 0.36) only because the sulfur dioxide columns dominate the raw covariance.
 - Macro averages are used because the high class is only about 19% of the training set.
 
 ## 5. Presentation (10 minutes, plus 5 of questions)
