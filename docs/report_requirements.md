@@ -45,7 +45,8 @@ Required sections, in this order:
 |---|---|---|
 | Descriptive statistics | `results/tables/descriptive_statistics.csv`. The EDA runs on the deduplicated data (5318 wines, 1179 duplicates removed), the same wines the models use | done |
 | Histograms | `feature_histograms.png` | done |
-| Scatter plots | `scatter_<feature>_<feature>.png` (only one pair so far) | partial |
+| Scatter plots | `scatter_<feature>_<feature>.png`, colored by class: alcohol vs density (the two features most correlated with quality) and the three most correlated feature pairs (free vs total SO₂ 0.72, density vs alcohol 0.67, residual sugar vs density 0.52), which show redundancy between features | done |
+| Features by class | `feature_boxplots_by_class.png`: alcohol rises from low to high quality, volatile acidity, chlorides and density fall, while pH, sulphates, citric acid and residual sugar barely change. The largest isolated points (density 1.039, residual sugar 65.8) belong to one medium wine | done |
 | Correlation matrix | `correlation_matrix.png` | done |
 | Interpretation of every figure | Report text | todo |
 | Missing values | `s3_preprocessing.py` validates there are none | done |
