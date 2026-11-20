@@ -62,7 +62,7 @@ Required sections, in this order:
 | Requirement | Support in the repo | Status |
 |---|---|---|
 | Discriminant analysis: relevance, class separation, assumptions | `s4_discriminant_analysis.py`: skewness and standard deviation by class, correlated pairs, LDA vs QDA, `lda_projection.png` | done |
-| Resampling: cross-validation or bootstrap, justified | `evaluation.py` (stratified 5-fold CV on the training set) | partial: write the justification |
+| Resampling: cross-validation or bootstrap, justified | `evaluation.py` (stratified 5-fold CV on the training set, bootstrap for the test intervals) and `s10_resampling_comparison.py` (`resampling_comparison.csv`), which compares hold-out, 5-fold, 10-fold and leave-one-out with the numbers below | done (write the text) |
 | Distinguish resampling from class balancing | Explain: CV estimates performance, balancing changes the training weights or priors (the docstring of `s6_class_balancing.py` has the argument) | todo (write) |
 | Class balancing, if needed | `s6_class_balancing.py`: class weights (logistic regression, random forest) and equal priors (LDA) compared with the unbalanced version, `class_balancing_comparison.csv`. SMOTE was not tried (needs `imbalanced-learn`), say so in the limitations | done |
 | PCA: need, preprocessing, number of components, variance, effect | `s5_pca.py`: standardized first, 8 components reach 90% (Kaiser criterion keeps 3), PCA lowered every model in CV macro F1, so it is not used in the final models | done |
@@ -128,6 +128,24 @@ PCA results (5-fold CV on the training set, macro F1):
 | Random forest (balanced) | 0.597 | 0.567 |
 
 All three models use the balanced settings of the final comparison, so these numbers are comparable with the tuning and test tables. QDA was only compared with LDA in the discriminant analysis step (`s4`), where it scored 0.522 against LDA's 0.554 with class-proportion priors, and was not carried to the final comparison because LDA beat it and the two share the same assumptions.
+
+Validation methods (training set, macro F1, 10 repetitions with new shuffles; `resampling_comparison.csv`):
+
+| Model | Method | Macro F1 | Std between repeats | Gap to leave-one-out | Fits per run | Seconds per run |
+|---|---|---|---|---|---|---|
+| LDA | hold-out 80/20 | 0.542 | 0.0086 | -0.006 | 1 | 0.01 |
+| LDA | 5-fold | 0.546 | 0.0022 | -0.001 | 5 | 0.02 |
+| LDA | 10-fold | 0.546 | 0.0016 | -0.001 | 10 | 0.04 |
+| LDA | leave-one-out | 0.547 | not applicable | 0 | 4254 | 15.3 |
+| Logistic regression | hold-out 80/20 | 0.536 | 0.0144 | -0.004 | 1 | 0.01 |
+| Logistic regression | 5-fold | 0.542 | 0.0016 | +0.002 | 5 | 0.06 |
+| Logistic regression | 10-fold | 0.541 | 0.0017 | +0.001 | 10 | 0.11 |
+| Logistic regression | leave-one-out | 0.540 | not applicable | 0 | 4254 | 46.3 |
+| Random forest | hold-out 80/20 | 0.590 | 0.0163 | not run | 1 | 0.11 |
+| Random forest | 5-fold | 0.589 | 0.0067 | not run | 5 | 0.52 |
+| Random forest | 10-fold | 0.593 | 0.0062 | not run | 10 | 1.10 |
+
+Reading: a single hold-out split moves the estimate 2 to 9 times more than 5-fold when the shuffle changes (std 0.009 to 0.016), so one split is not reliable. 5-fold and 10-fold give the same mean and almost the same stability, and 10-fold costs twice as much, so 5 folds are enough. Leave-one-out is the least biased reference, but it is 700 to 800 times slower than 5-fold for LDA and logistic regression and agrees with 5-fold within 0.002, so it adds nothing. It was not run for the random forest, which would need 4254 forest fits. The std measures only the change caused by the shuffle, not the sampling variability of the wines (the bootstrap intervals in the test table cover that). The `seconds_per_run` column depends on the machine and is the only column that changes between runs.
 
 Preprocessing experiments (5-fold CV on the training set, macro F1 change against the untreated data, treatments learned inside each fold and every variant scored on the same wines):
 
