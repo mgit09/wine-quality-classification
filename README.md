@@ -7,7 +7,7 @@ This project investigates wine quality (red and white wines) based on 11 physico
 
 ## Status
 
-In progress...
+The analysis pipeline (steps `s1` to `s9`) is complete: exploratory analysis, discriminant analysis, PCA, class balancing, model tuning, a single final evaluation on the test set and the preprocessing experiments. Every decision and its numbers are listed in `docs/report_requirements.md`. The IEEE report and the presentation are still to be written.
 
 
 ## Dataset
