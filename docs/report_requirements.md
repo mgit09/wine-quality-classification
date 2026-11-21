@@ -34,7 +34,7 @@ Required sections, in this order:
 | Requirement | Where in the report | Support in the repo | Status |
 |---|---|---|---|
 | Dataset name, identifier or version, and link | Introduction | wine_quality, OpenML id 287, https://www.openml.org/d/287 (README) | done |
-| Context, number of observations, available variables | Data description | `s1_inspect_data.py` | done |
+| Context, number of observations, available variables | Data description | `s01_inspect_data.py` | done |
 | Supervised or unsupervised, and why | Introduction | Supervised, decided in the group chat | todo (write) |
 | Target variable and task type | Introduction | `quality`, classification into low (<=5), medium (6), high (>=7), `config.py` | done |
 | Why the class cut-offs were chosen | Methodology | Scores 5 to 7 hold about 93% of the wines, so the cut follows the distribution of the grades | todo (write) |
@@ -51,32 +51,32 @@ Required sections, in this order:
 | Redundancy check | `feature_correlation_pairs.csv`: absolute correlation of the 55 feature pairs, flagged above 0.8 (the redundancy threshold used in the course exercise). No pair exceeds it, so no feature is removed. The largest are free vs total SO₂ (0.72), density vs alcohol (0.67) and residual sugar vs density (0.52) | done |
 | Correlation matrix | `correlation_matrix.png` | done |
 | Interpretation of every figure | Report text | todo |
-| Missing values | `s3_preprocessing.py` validates there are none | done |
-| Outliers: detection and decision | `feature_boxplots.png`, and `s9_preprocessing_experiments.py` (`preprocessing_experiments.csv`). Decision: **keep every wine**. 54 of 4254 training rows lie beyond 5 standard deviations, and 21.9% of the training rows have at least one IQR outlier, so removal is not viable. Removing the extreme rows changed the CV macro F1 by -0.004 to -0.001 for LDA, logistic regression and random forest, and only helped QDA (+0.021, fold std 0.014), which is not in the final comparison. The extreme points are real measurements that the models must handle, and nothing proves they are errors | done |
+| Missing values | `s03_preprocessing.py` validates there are none | done |
+| Outliers: detection and decision | `feature_boxplots.png`, and `s09_preprocessing_experiments.py` (`preprocessing_experiments.csv`). Decision: **keep every wine**. 54 of 4254 training rows lie beyond 5 standard deviations, and 21.9% of the training rows have at least one IQR outlier, so removal is not viable. Removing the extreme rows changed the CV macro F1 by -0.004 to -0.001 for LDA, logistic regression and random forest, and only helped QDA (+0.021, fold std 0.014), which is not in the final comparison. The extreme points are real measurements that the models must handle, and nothing proves they are errors | done |
 | Skewed features: detection and decision | Skewness by class in `skewness_by_class.csv`. Six features have skewness above 1 (chlorides 5.5, residual sugar 1.8, sulphates 1.8, fixed acidity 1.7, free SO₂ 1.5, volatile acidity 1.5). Decision: **no transform**. A log transform changed the CV macro F1 by +0.006 (LDA), +0.005 (logistic regression), 0.000 (QDA) and -0.001 (random forest), and a Yeo-Johnson power transform (Box-Cox is not usable because citric acid has zeros) by +0.002 (LDA), +0.002 (logistic regression), +0.028 (QDA) and -0.001 (random forest). All changes are within the fold std (0.005 to 0.018) except the power transform for QDA, a single model, so the rule (most models) is not met. LDA assumptions stay approximately met, and the report must say so | done |
 | Class imbalance | `class_distribution.png` | done |
 | Categorical encoding | Not needed, all features are numeric: say so explicitly | todo (write) |
 | Scaling | Done inside the model pipelines, to avoid leakage: explain | todo (write) |
-| Duplicate removal and train/test split | `s3_preprocessing.py`: duplicates removed before a stratified 80/20 split. Report how many rows were removed | done |
+| Duplicate removal and train/test split | `s03_preprocessing.py`: duplicates removed before a stratified 80/20 split. Report how many rows were removed | done |
 
 ### 3.3 Discriminant analysis, resampling and PCA
 
 | Requirement | Support in the repo | Status |
 |---|---|---|
-| Discriminant analysis: relevance, class separation, assumptions | `s4_discriminant_analysis.py`: skewness and standard deviation by class, correlated pairs, LDA vs QDA, `lda_projection.png` | done |
+| Discriminant analysis: relevance, class separation, assumptions | `s04_discriminant_analysis.py`: skewness and standard deviation by class, correlated pairs, LDA vs QDA, `lda_projection.png` | done |
 | Resampling: cross-validation or bootstrap, justified | `evaluation.py` (stratified 5-fold CV on the training set, bootstrap for the test intervals) and `s10_resampling_comparison.py` (`resampling_comparison.csv`), which compares hold-out, 5-fold, 10-fold and leave-one-out with the numbers below | done (write the text) |
-| Distinguish resampling from class balancing | Explain: CV estimates performance, balancing changes the training weights or priors (the docstring of `s6_class_balancing.py` has the argument) | todo (write) |
-| Class balancing, if needed | `s6_class_balancing.py`: class weights (logistic regression, random forest) and equal priors (LDA) compared with the unbalanced version, `class_balancing_comparison.csv`. Random over- and undersampling inside each training fold were also compared (see the resampling paragraph below). SMOTE was not tried (needs `imbalanced-learn`), say so in the limitations | done |
-| PCA: need, preprocessing, number of components, variance, effect | `s5_pca.py`: standardized first, 8 components reach 90% (Kaiser criterion keeps 3), PCA lowered every model in CV macro F1, so it is not used in the final models. It also saved no time: the 5-fold CV took 0.04 to 0.05 s (LDA), 0.07 to 0.08 s (logistic regression) and 0.55 to 0.56 s (random forest) with or without PCA (`pca_fit_time.csv`, wall time, machine-dependent), because the dataset is small | done |
+| Distinguish resampling from class balancing | Explain: CV estimates performance, balancing changes the training weights or priors (the docstring of `s06_class_balancing.py` has the argument) | todo (write) |
+| Class balancing, if needed | `s06_class_balancing.py`: class weights (logistic regression, random forest) and equal priors (LDA) compared with the unbalanced version, `class_balancing_comparison.csv`. Random over- and undersampling inside each training fold were also compared (see the resampling paragraph below). SMOTE was not tried (needs `imbalanced-learn`), say so in the limitations | done |
+| PCA: need, preprocessing, number of components, variance, effect | `s05_pca.py`: standardized first, 8 components reach 90% (Kaiser criterion keeps 3), PCA lowered every model in CV macro F1, so it is not used in the final models. It also saved no time: the 5-fold CV took 0.04 to 0.05 s (LDA), 0.07 to 0.08 s (logistic regression) and 0.55 to 0.56 s (random forest) with or without PCA (`pca_fit_time.csv`, wall time, machine-dependent), because the dataset is small | done |
 
 ### 3.4 Training and model comparison
 
 | Requirement | Support in the repo | Status |
 |---|---|---|
-| At least 2 methods, one taught in class, both suited to the task | LDA, logistic regression, random forest in `models.py`, all tuned in `s7_model_tuning.py` | done |
+| At least 2 methods, one taught in class, both suited to the task | LDA, logistic regression, random forest in `models.py`, all tuned in `s07_model_tuning.py` | done |
 | Reason for each method and its main parameters | Parameter grids in `models.py`, search results in `tuning_<model>.csv` and `tuning_best_parameters.csv` | partial: write the reasons |
-| Training and evaluation procedure | Grid search with stratified 5-fold CV on the training set, scored by macro F1 (`s7_model_tuning.py`). One final evaluation on the test set (`s8_final_evaluation.py`) | done |
-| Same conditions for all models | Same split, same CV splitter, same scoring, balancing on for all (`s7_model_tuning.py`) | done |
+| Training and evaluation procedure | Grid search with stratified 5-fold CV on the training set, scored by macro F1 (`s07_model_tuning.py`). One final evaluation on the test set (`s08_final_evaluation.py`) | done |
+| Same conditions for all models | Same split, same CV splitter, same scoring, balancing on for all (`s07_model_tuning.py`) | done |
 | Accuracy, precision, recall, F1 | `test_comparison.csv` (macro averages and a majority-class baseline) and `test_report_<model>.csv` (per class) | done |
 | ROC curve and AUC (taught in Aula 11) | `roc_curves.png` (one-vs-rest, one panel per class) and the `auc_*` columns of `test_comparison.csv` | done |
 | Confusion matrix | `confusion_matrix_<model>.png`, one per model | done |

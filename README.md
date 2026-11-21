@@ -38,15 +38,15 @@ wine-quality-classification/
 │   └── tables/
 ├── src/
 │   ├── steps/
-│   │   ├── s1_inspect_data.py
-│   │   ├── s2_exploratory_data_analysis.py
-│   │   ├── s3_preprocessing.py
-│   │   ├── s4_discriminant_analysis.py
-│   │   ├── s5_pca.py
-│   │   ├── s6_class_balancing.py
-│   │   ├── s7_model_tuning.py
-│   │   ├── s8_final_evaluation.py
-│   │   ├── s9_preprocessing_experiments.py
+│   │   ├── s01_inspect_data.py
+│   │   ├── s02_exploratory_data_analysis.py
+│   │   ├── s03_preprocessing.py
+│   │   ├── s04_discriminant_analysis.py
+│   │   ├── s05_pca.py
+│   │   ├── s06_class_balancing.py
+│   │   ├── s07_model_tuning.py
+│   │   ├── s08_final_evaluation.py
+│   │   ├── s09_preprocessing_experiments.py
 │   │   └── s10_resampling_comparison.py
 │   ├── config.py
 │   ├── data_loading.py
@@ -108,15 +108,15 @@ The project is organized into sequential steps, each responsible for a stage of 
 Run the commands below from the repository root, with the virtual environment activated.
 
 ```bash
-python -m src.steps.s1_inspect_data
-python -m src.steps.s2_exploratory_data_analysis
-python -m src.steps.s3_preprocessing
-python -m src.steps.s4_discriminant_analysis
-python -m src.steps.s5_pca
-python -m src.steps.s6_class_balancing
-python -m src.steps.s7_model_tuning
-python -m src.steps.s8_final_evaluation
-python -m src.steps.s9_preprocessing_experiments
+python -m src.steps.s01_inspect_data
+python -m src.steps.s02_exploratory_data_analysis
+python -m src.steps.s03_preprocessing
+python -m src.steps.s04_discriminant_analysis
+python -m src.steps.s05_pca
+python -m src.steps.s06_class_balancing
+python -m src.steps.s07_model_tuning
+python -m src.steps.s08_final_evaluation
+python -m src.steps.s09_preprocessing_experiments
 python -m src.steps.s10_resampling_comparison
 ```
 
