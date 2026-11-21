@@ -8,6 +8,7 @@ from matplotlib.figure import Figure
 from src.config import (
     CLASS_COLUMN,
     QUALITY_CLASS_LABELS,
+    REDUNDANCY_CORRELATION_THRESHOLD,
     TABLES_DIR,
     TARGET_COLUMN,
 )
@@ -16,10 +17,11 @@ from src.data_loading import (
     load_raw_data,
     remove_duplicate_rows,
 )
-from src.outputs import save_figure
+from src.outputs import save_figure, save_table
 
 HISTOGRAM_BINS = 30
 GRID_COLUMNS = 4
+SCATTER_MATRIX_FEATURES = 6
 
 
 def create_subplot_grid(number_of_plots: int) -> tuple[Figure, np.ndarray]:
@@ -206,6 +208,27 @@ def select_top_correlated_features(
     return strongest.head(number_of_features).index.tolist()
 
 
+def calculate_pair_correlations(
+    data: pd.DataFrame,
+    feature_columns: list[str],
+) -> pd.Series:
+    """Calculate the absolute correlation of every pair of features.
+
+    Args:
+        data: DataFrame with the dataset.
+        feature_columns: Names of the feature columns.
+
+    Returns:
+        Absolute correlation of each pair, indexed by the two feature names
+        and sorted from the largest value down.
+    """
+    # Keep only the upper triangle so each pair appears once
+    correlations = data[feature_columns].corr().abs()
+    upper_triangle = np.triu(np.ones(correlations.shape, dtype=bool), k=1)
+    pair_correlations = correlations.where(upper_triangle).stack()
+    return pair_correlations.dropna().sort_values(ascending=False)
+
+
 def select_most_correlated_pairs(
     data: pd.DataFrame,
     feature_columns: list[str],
@@ -221,12 +244,7 @@ def select_most_correlated_pairs(
     Returns:
         Pairs of feature names, from the largest absolute correlation down.
     """
-    # Keep only the upper triangle so each pair appears once
-    correlations = data[feature_columns].corr().abs()
-    upper_triangle = np.triu(np.ones(correlations.shape, dtype=bool), k=1)
-    pair_correlations = correlations.where(upper_triangle).stack()
-
-    strongest = pair_correlations.sort_values(ascending=False).head(number_of_pairs)
+    strongest = calculate_pair_correlations(data, feature_columns).head(number_of_pairs)
     print("\nMost correlated feature pairs (absolute correlation):")
     print(strongest.round(3))
     return list(strongest.index)
@@ -262,6 +280,95 @@ def plot_scatter_by_class(
     save_figure(figure, f"scatter_{horizontal_column}_{vertical_column}.png")
 
 
+def check_feature_redundancy(
+    data: pd.DataFrame,
+    feature_columns: list[str],
+) -> None:
+    """Save and print the pair correlations that may indicate redundancy.
+
+    Args:
+        data: DataFrame with the dataset.
+        feature_columns: Names of the feature columns.
+    """
+    pair_correlations = calculate_pair_correlations(data, feature_columns)
+    table = pair_correlations.rename("absolute_correlation").to_frame()
+    table.index.names = ["feature_1", "feature_2"]
+    table["above_threshold"] = (
+        table["absolute_correlation"] > REDUNDANCY_CORRELATION_THRESHOLD
+    )
+    save_table(table, "feature_correlation_pairs.csv")
+
+    number_above = int(table["above_threshold"].sum())
+    print("\nAbsolute correlation of every feature pair:")
+    print(table["absolute_correlation"].round(3))
+    print(
+        f"\nPairs above {REDUNDANCY_CORRELATION_THRESHOLD}: {number_above} "
+        f"(largest: {table['absolute_correlation'].iloc[0]:.3f})."
+    )
+    if number_above == 0:
+        print("No pair is redundant enough to justify removing a feature.")
+    else:
+        print("These pairs are candidates for removing one of their features.")
+
+
+def plot_scatter_matrix(
+    data: pd.DataFrame,
+    feature_columns: list[str],
+) -> None:
+    """Plot a scatter matrix of the features colored by quality class.
+
+    The diagonal shows the histogram of each feature per class.
+
+    Args:
+        data: DataFrame with the quality class column.
+        feature_columns: Names of the features to plot.
+    """
+    size = len(feature_columns)
+    figure, axes = plt.subplots(size, size, figsize=(2.2 * size, 2.2 * size))
+
+    for row, vertical_column in enumerate(feature_columns):
+        for column, horizontal_column in enumerate(feature_columns):
+            axis = axes[row, column]
+            for label in QUALITY_CLASS_LABELS:
+                subset = data[data[CLASS_COLUMN] == label]
+                if row == column:
+                    axis.hist(
+                        subset[horizontal_column],
+                        bins=HISTOGRAM_BINS,
+                        alpha=0.5,
+                        label=label,
+                    )
+                else:
+                    axis.scatter(
+                        subset[horizontal_column],
+                        subset[vertical_column],
+                        s=2,
+                        alpha=0.3,
+                        label=label,
+                    )
+            axis.tick_params(labelsize=6)
+            # Names only on the outer panels, tick labels only on the borders
+            if row == size - 1:
+                axis.set_xlabel(horizontal_column, fontsize=8)
+            else:
+                axis.set_xticklabels([])
+            if column == 0:
+                axis.set_ylabel(vertical_column, fontsize=8)
+            else:
+                axis.set_yticklabels([])
+
+    handles, labels = axes[0, 0].get_legend_handles_labels()
+    figure.legend(
+        handles,
+        labels,
+        title="Quality class",
+        loc="upper left",
+        bbox_to_anchor=(1.0, 1.0),
+    )
+    figure.tight_layout()
+    save_figure(figure, "scatter_matrix.png")
+
+
 def main() -> None:
     """Run the exploratory analysis and save its figures and tables."""
     # Same duplicate removal as the preprocessing step, so the EDA describes
@@ -291,6 +398,13 @@ def main() -> None:
 
     for horizontal_column, vertical_column in scatter_pairs:
         plot_scatter_by_class(data, horizontal_column, vertical_column)
+
+    # Scatter matrix of the features most related to quality
+    plot_scatter_matrix(
+        data,
+        select_top_correlated_features(data, feature_columns, SCATTER_MATRIX_FEATURES),
+    )
+    check_feature_redundancy(data, feature_columns)
 
 
 if __name__ == "__main__":

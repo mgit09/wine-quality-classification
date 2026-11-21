@@ -35,6 +35,11 @@ QUALITY_CLASS_BINS = [-float("inf"), 5, 6, float("inf")]
 QUALITY_CLASS_LABELS = ["low", "medium", "high"]
 
 # --------------------------------------------------
+# Exploratory analysis
+# Feature pairs with an absolute correlation above this may be redundant
+REDUNDANCY_CORRELATION_THRESHOLD = 0.8
+
+# --------------------------------------------------
 # Train and test split and validation
 TEST_SIZE = 0.2
 CROSS_VALIDATION_FOLDS = 5
