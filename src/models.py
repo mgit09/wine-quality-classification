@@ -28,6 +28,9 @@ RANDOM_FOREST_PARAMETER_GRID = {
     "n_estimators": [200, 500],
     "max_depth": [None, 10, 20],
     "min_samples_leaf": [1, 3],
+    # With 11 features: sqrt and log2 are both 3 (log2 is left out), 0.5 is 5,
+    # 0.75 is 8 and 1.0 is all of them (plain bagging)
+    "max_features": ["sqrt", 0.5, 0.75, 1.0],
 }
 
 

@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.dummy import DummyClassifier
+from sklearn.inspection import permutation_importance
 from sklearn.metrics import f1_score
 
 from src.config import (
@@ -189,6 +190,63 @@ def plot_feature_importances(model: BaseEstimator, feature_names: list[str]) -> 
     save_figure(figure, "random_forest_importances.png")
 
 
+def plot_importance_comparison(
+    model: BaseEstimator,
+    test_features: pd.DataFrame,
+    test_target: pd.Series,
+) -> None:
+    """Compare the impurity and permutation importances of the random forest.
+
+    The impurity importance (MDI) is computed on the training data and favors
+    features with many distinct values. The permutation importance is the drop
+    of the macro F1 when one feature is shuffled. It is computed on the test
+    set, which is acceptable because it only interprets the final model after
+    every decision was made and changes none of them. Both are normalized to
+    sum to one, so the bars are comparable.
+
+    Args:
+        model: Fitted random forest.
+        test_features: Feature matrix of the test set.
+        test_target: Quality class of each test row.
+    """
+    result = permutation_importance(
+        model,
+        test_features,
+        test_target,
+        scoring=TUNING_SCORING,
+        n_repeats=10,
+        random_state=RANDOM_STATE,
+    )
+    permutation = pd.DataFrame(
+        {
+            "importance_mean": result.importances_mean,
+            "importance_std": result.importances_std,
+        },
+        index=test_features.columns,
+    ).sort_values("importance_mean", ascending=False)
+    save_table(permutation, "random_forest_permutation_importances.csv")
+
+    impurity = pd.Series(model.feature_importances_, index=test_features.columns)
+    comparison = pd.DataFrame(
+        {
+            "Impurity (MDI)": impurity / impurity.sum(),
+            "Permutation": permutation["importance_mean"]
+            / permutation["importance_mean"].sum(),
+        }
+    ).loc[permutation.index[::-1]]
+
+    figure, axis = plt.subplots(figsize=(8, 6))
+    comparison.plot.barh(ax=axis)
+    axis.set_xlabel("Normalized importance (sums to 1)")
+    save_figure(figure, "random_forest_importance_comparison.png")
+
+    top_impurity = set(impurity.nlargest(3).index)
+    top_permutation = set(permutation.index[:3])
+    print(f"\nTop 3 by impurity: {sorted(top_impurity)}")
+    print(f"Top 3 by permutation: {sorted(top_permutation)}")
+    print(f"Top 3 agree: {top_impurity == top_permutation}")
+
+
 def create_baseline_model(
     train_features: pd.DataFrame,
     train_target: pd.Series,
@@ -279,6 +337,7 @@ def main() -> None:
     )
 
     plot_feature_importances(models["random_forest"], train_features.columns.tolist())
+    plot_importance_comparison(models["random_forest"], test_features, test_target)
 
 
 if __name__ == "__main__":
