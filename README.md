@@ -7,7 +7,7 @@ This project investigates wine quality (red and white wines) based on 11 physico
 
 ## Status
 
-In progress...
+The analysis pipeline (steps `s1` to `s10`) is complete: exploratory analysis, discriminant analysis, PCA, class balancing, model tuning, a single final evaluation on the test set the preprocessing experiments and a comparison of validation methods. Every decision and its numbers are listed in `docs/report_requirements.md`. The IEEE report and the presentation are still to be written.
 
 
 ## Dataset
@@ -45,7 +45,9 @@ wine-quality-classification/
 │   │   ├── s5_pca.py
 │   │   ├── s6_class_balancing.py
 │   │   ├── s7_model_tuning.py
-│   │   └── s8_final_evaluation.py
+│   │   ├── s8_final_evaluation.py
+│   │   ├── s9_preprocessing_experiments.py
+│   │   └── s10_resampling_comparison.py
 │   ├── config.py
 │   ├── data_loading.py
 │   ├── evaluation.py
@@ -114,6 +116,8 @@ python -m src.steps.s5_pca
 python -m src.steps.s6_class_balancing
 python -m src.steps.s7_model_tuning
 python -m src.steps.s8_final_evaluation
+python -m src.steps.s9_preprocessing_experiments
+python -m src.steps.s10_resampling_comparison
 ```
 
 ## Working with Branches

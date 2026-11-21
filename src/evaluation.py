@@ -1,6 +1,7 @@
 """Metrics and cross-validation helpers shared by the modeling steps."""
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.metrics import (
@@ -11,6 +12,8 @@ from sklearn.metrics import (
     f1_score,
     precision_score,
     recall_score,
+    roc_auc_score,
+    roc_curve,
 )
 from sklearn.model_selection import StratifiedKFold, cross_val_predict, cross_validate
 
@@ -188,4 +191,66 @@ def plot_confusion_matrix(
     ).plot(ax=axis, colorbar=False)
     axis.set_title(title)
 
+    save_figure(figure, file_name)
+
+
+def calculate_auc(
+    true_labels: pd.Series,
+    probabilities: np.ndarray,
+    classes: list[str],
+) -> dict[str, float]:
+    """Calculate the area under the ROC curve of each class and its average.
+
+    With more than two classes, each class is scored against all the others
+    (one-vs-rest), using the probability that the model gives to that class.
+
+    Args:
+        true_labels: Real quality classes.
+        probabilities: Predicted probability of each class, one column per
+            class in the order of classes.
+        classes: Class names, in the column order of the probabilities.
+
+    Returns:
+        Dictionary with the AUC of each class and the macro average.
+    """
+    aucs = {
+        f"auc_{label}": roc_auc_score(true_labels == label, probabilities[:, index])
+        for index, label in enumerate(classes)
+    }
+    aucs["auc_macro"] = float(np.mean(list(aucs.values())))
+    return aucs
+
+
+def plot_roc_curves(
+    true_labels: pd.Series,
+    probabilities_by_model: dict[str, np.ndarray],
+    classes: list[str],
+    file_name: str,
+) -> None:
+    """Plot the one-vs-rest ROC curves, one panel per class, one line per model.
+
+    The diagonal is a model that guesses at random.
+
+    Args:
+        true_labels: Real quality classes.
+        probabilities_by_model: Predicted probabilities of each model, by name.
+        classes: Class names, in the column order of the probabilities.
+        file_name: Name of the output image, including the extension.
+    """
+    figure, axes = plt.subplots(1, len(classes), figsize=(5 * len(classes), 4.5))
+
+    for axis, (index, label) in zip(axes, enumerate(classes)):
+        for model_name, probabilities in probabilities_by_model.items():
+            false_positive_rate, true_positive_rate, _ = roc_curve(
+                true_labels == label, probabilities[:, index]
+            )
+            axis.plot(false_positive_rate, true_positive_rate, label=model_name)
+
+        axis.plot([0, 1], [0, 1], color="gray", linestyle="--")
+        axis.set_title(f"{label} vs the other classes")
+        axis.set_xlabel("False positive rate")
+        axis.set_ylabel("True positive rate")
+        axis.legend(loc="lower right")
+
+    figure.tight_layout()
     save_figure(figure, file_name)

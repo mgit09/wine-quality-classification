@@ -35,9 +35,16 @@ QUALITY_CLASS_BINS = [-float("inf"), 5, 6, float("inf")]
 QUALITY_CLASS_LABELS = ["low", "medium", "high"]
 
 # --------------------------------------------------
+# Exploratory analysis
+# Feature pairs with an absolute correlation above this may be redundant
+REDUNDANCY_CORRELATION_THRESHOLD = 0.8
+
+# --------------------------------------------------
 # Train and test split and validation
 TEST_SIZE = 0.2
 CROSS_VALIDATION_FOLDS = 5
+# Repetitions with different shuffles, to measure how stable an estimate is
+RESAMPLING_REPEATS = 10
 
 # --------------------------------------------------
 # Hyperparameter tuning
@@ -53,5 +60,12 @@ CONFIDENCE_LEVEL = 0.95
 # PCA
 # Share of the variance that the kept components must explain
 PCA_VARIANCE_THRESHOLD = 0.90
+
+# --------------------------------------------------
+# Preprocessing experiments
+# A row is extreme if any feature is farther than this many standard deviations
+EXTREME_Z_SCORE = 5
+# Features with a skewness above this value get a log transform
+SKEWNESS_THRESHOLD = 1.0
 
 # --------------------------------------------------

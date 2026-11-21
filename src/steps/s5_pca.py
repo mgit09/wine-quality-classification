@@ -1,5 +1,7 @@
 """Evaluate whether PCA is useful and measure its effect on the models."""
 
+import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -188,7 +190,7 @@ def compare_models_with_and_without_pca(
     features: pd.DataFrame,
     target: pd.Series,
     number_of_components: int,
-) -> pd.DataFrame:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Compare each model with and without PCA using cross-validation.
 
     The scaler and the PCA are inside the pipeline, so inside each fold they
@@ -201,7 +203,8 @@ def compare_models_with_and_without_pca(
 
     Returns:
         DataFrame with the mean and standard deviation of each metric for
-        every model and preprocessing combination.
+        every model and preprocessing combination, and DataFrame with the
+        seconds each cross-validation run took.
     """
     base_models = {
         # Same balanced settings as the tuned models of the final comparison
@@ -211,19 +214,24 @@ def compare_models_with_and_without_pca(
     }
 
     results = {}
+    seconds = {}
     for model_name, model in base_models.items():
-        results[(model_name, "original features")] = cross_validate_model(
-            model, features, target
-        )
-        results[(model_name, f"PCA {number_of_components} components")] = (
-            cross_validate_model(
-                add_pca(model, number_of_components),
-                features,
-                target,
+        variants = {
+            "original features": model,
+            f"PCA {number_of_components} components": add_pca(
+                model, number_of_components
+            ),
+        }
+        for variant_name, variant in variants.items():
+            start = time.perf_counter()
+            results[(model_name, variant_name)] = cross_validate_model(
+                variant, features, target
             )
-        )
+            seconds[(model_name, variant_name)] = time.perf_counter() - start
 
-    return pd.concat(results, names=["model", "features", "metric"])
+    fit_times = pd.Series(seconds, name="cross_validation_seconds").to_frame()
+    fit_times.index.names = ["model", "features"]
+    return pd.concat(results, names=["model", "features", "metric"]), fit_times
 
 
 def main() -> None:
@@ -255,7 +263,7 @@ def main() -> None:
     plot_pca_projection(features, target, pca)
 
     # Effect of the dimensionality reduction on the models
-    comparison = compare_models_with_and_without_pca(
+    comparison, fit_times = compare_models_with_and_without_pca(
         features,
         target,
         number_of_components,
@@ -263,6 +271,11 @@ def main() -> None:
     print("\nCross-validation results:")
     print(comparison.round(3))
     save_table(comparison, "pca_model_comparison.csv")
+
+    # Timing is wall time of the whole 5-fold run and varies between runs
+    print("\nCross-validation time (seconds):")
+    print(fit_times.round(2))
+    save_table(fit_times, "pca_fit_time.csv")
 
 
 if __name__ == "__main__":

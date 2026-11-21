@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.dummy import DummyClassifier
+from sklearn.inspection import permutation_importance
 from sklearn.metrics import f1_score
 
 from src.config import (
@@ -28,9 +29,11 @@ from src.config import (
 )
 from src.data_loading import load_processed_data, split_features_and_target
 from src.evaluation import (
+    calculate_auc,
     calculate_test_metrics,
     create_per_class_report,
     plot_confusion_matrix,
+    plot_roc_curves,
 )
 from src.outputs import save_figure, save_table
 
@@ -187,25 +190,80 @@ def plot_feature_importances(model: BaseEstimator, feature_names: list[str]) -> 
     save_figure(figure, "random_forest_importances.png")
 
 
-def create_baseline_predictions(
+def plot_importance_comparison(
+    model: BaseEstimator,
+    test_features: pd.DataFrame,
+    test_target: pd.Series,
+) -> None:
+    """Compare the impurity and permutation importances of the random forest.
+
+    The impurity importance (MDI) is computed on the training data and favors
+    features with many distinct values. The permutation importance is the drop
+    of the macro F1 when one feature is shuffled. It is computed on the test
+    set, which is acceptable because it only interprets the final model after
+    every decision was made and changes none of them. Both are normalized to
+    sum to one, so the bars are comparable.
+
+    Args:
+        model: Fitted random forest.
+        test_features: Feature matrix of the test set.
+        test_target: Quality class of each test row.
+    """
+    result = permutation_importance(
+        model,
+        test_features,
+        test_target,
+        scoring=TUNING_SCORING,
+        n_repeats=10,
+        random_state=RANDOM_STATE,
+    )
+    permutation = pd.DataFrame(
+        {
+            "importance_mean": result.importances_mean,
+            "importance_std": result.importances_std,
+        },
+        index=test_features.columns,
+    ).sort_values("importance_mean", ascending=False)
+    save_table(permutation, "random_forest_permutation_importances.csv")
+
+    impurity = pd.Series(model.feature_importances_, index=test_features.columns)
+    comparison = pd.DataFrame(
+        {
+            "Impurity (MDI)": impurity / impurity.sum(),
+            "Permutation": permutation["importance_mean"]
+            / permutation["importance_mean"].sum(),
+        }
+    ).loc[permutation.index[::-1]]
+
+    figure, axis = plt.subplots(figsize=(8, 6))
+    comparison.plot.barh(ax=axis)
+    axis.set_xlabel("Normalized importance (sums to 1)")
+    save_figure(figure, "random_forest_importance_comparison.png")
+
+    top_impurity = set(impurity.nlargest(3).index)
+    top_permutation = set(permutation.index[:3])
+    print(f"\nTop 3 by impurity: {sorted(top_impurity)}")
+    print(f"Top 3 by permutation: {sorted(top_permutation)}")
+    print(f"Top 3 agree: {top_impurity == top_permutation}")
+
+
+def create_baseline_model(
     train_features: pd.DataFrame,
     train_target: pd.Series,
-    test_features: pd.DataFrame,
-) -> np.ndarray:
-    """Predict the most frequent class for every test wine.
+) -> BaseEstimator:
+    """Fit a model that always predicts the most frequent class.
 
     Any useful model must beat this reference.
 
     Args:
         train_features: Feature matrix of the training set.
         train_target: Quality class of each training row.
-        test_features: Feature matrix of the test set.
 
     Returns:
-        Array with the most frequent training class repeated for each wine.
+        Fitted baseline model.
     """
     baseline = DummyClassifier(strategy="most_frequent")
-    return baseline.fit(train_features, train_target).predict(test_features)
+    return baseline.fit(train_features, train_target)
 
 
 def main() -> None:
@@ -218,17 +276,25 @@ def main() -> None:
     )
 
     models = load_tuned_models()
-    predictions = {
-        "Majority class": create_baseline_predictions(
-            train_features, train_target, test_features
-        )
+    named_models = {
+        "Majority class": create_baseline_model(train_features, train_target),
+        **{MODEL_DISPLAY_NAMES[key]: model for key, model in models.items()},
     }
-    for model_key, model in models.items():
-        predictions[MODEL_DISPLAY_NAMES[model_key]] = model.predict(test_features)
+    predictions = {
+        name: model.predict(test_features) for name, model in named_models.items()
+    }
+    probabilities = {
+        name: model.predict_proba(test_features) for name, model in named_models.items()
+    }
+
+    # Every model must order its probability columns the same way
+    classes = list(named_models["Majority class"].classes_)
+    assert all(list(model.classes_) == classes for model in named_models.values())
 
     rows = {}
     for model_name, predicted in predictions.items():
         metrics = calculate_test_metrics(test_target, predicted)
+        metrics.update(calculate_auc(test_target, probabilities[model_name], classes))
         lower, upper = bootstrap_macro_f1_interval(test_target, predicted)
         metrics["f1_macro_ci_lower"] = lower
         metrics["f1_macro_ci_upper"] = upper
@@ -262,7 +328,16 @@ def main() -> None:
     best_key = tuning[f"cv_{TUNING_SCORING}"].astype(float).idxmax()
     print(f"\nBest model by cross-validation: {MODEL_DISPLAY_NAMES[best_key]}")
 
+    # ROC curves of the real models, the baseline is the diagonal
+    plot_roc_curves(
+        test_target,
+        {name: p for name, p in probabilities.items() if name != "Majority class"},
+        classes,
+        "roc_curves.png",
+    )
+
     plot_feature_importances(models["random_forest"], train_features.columns.tolist())
+    plot_importance_comparison(models["random_forest"], test_features, test_target)
 
 
 if __name__ == "__main__":
