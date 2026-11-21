@@ -47,11 +47,13 @@ Required sections, in this order:
 | Histograms | `feature_histograms.png` | done |
 | Scatter plots | `scatter_<feature>_<feature>.png`, colored by class: alcohol vs density (the two features most correlated with quality) and the three most correlated feature pairs (free vs total SO₂ 0.72, density vs alcohol 0.67, residual sugar vs density 0.52), which show redundancy between features | done |
 | Features by class | `feature_boxplots_by_class.png`: alcohol rises from low to high quality, volatile acidity, chlorides and density fall, while pH, sulphates, citric acid and residual sugar barely change. The largest isolated points (density 1.039, residual sugar 65.8) belong to one medium wine | done |
+| Scatter matrix | `scatter_matrix.png`: 6x6 matrix of the 6 features most correlated with quality (alcohol, density, volatile acidity, chlorides, citric acid, fixed acidity), coloured by class, with per-class histograms on the diagonal. Alcohol separates the classes best (high wines have high alcohol and low density). The classes overlap strongly in every pair and the medium class sits between the others, so no pair separates the three classes cleanly | done |
+| Redundancy check | `feature_correlation_pairs.csv`: absolute correlation of the 55 feature pairs, flagged above 0.8 (the redundancy threshold used in the course exercise). No pair exceeds it, so no feature is removed. The largest are free vs total SO₂ (0.72), density vs alcohol (0.67) and residual sugar vs density (0.52) | done |
 | Correlation matrix | `correlation_matrix.png` | done |
 | Interpretation of every figure | Report text | todo |
 | Missing values | `s3_preprocessing.py` validates there are none | done |
 | Outliers: detection and decision | `feature_boxplots.png`, and `s9_preprocessing_experiments.py` (`preprocessing_experiments.csv`). Decision: **keep every wine**. 54 of 4254 training rows lie beyond 5 standard deviations, and 21.9% of the training rows have at least one IQR outlier, so removal is not viable. Removing the extreme rows changed the CV macro F1 by -0.004 to -0.001 for LDA, logistic regression and random forest, and only helped QDA (+0.021, fold std 0.014), which is not in the final comparison. The extreme points are real measurements that the models must handle, and nothing proves they are errors | done |
-| Skewed features: detection and decision | Skewness by class in `skewness_by_class.csv`. Six features have skewness above 1 (chlorides 5.5, residual sugar 1.8, sulphates 1.8, fixed acidity 1.7, free SO₂ 1.5, volatile acidity 1.5). Decision: **no transform**. A log transform changed the CV macro F1 by +0.006 (LDA), +0.005 (logistic regression), 0.000 (QDA) and -0.001 (random forest), all within the fold std (0.005 to 0.013). LDA assumptions stay approximately met, and the report must say so | done |
+| Skewed features: detection and decision | Skewness by class in `skewness_by_class.csv`. Six features have skewness above 1 (chlorides 5.5, residual sugar 1.8, sulphates 1.8, fixed acidity 1.7, free SO₂ 1.5, volatile acidity 1.5). Decision: **no transform**. A log transform changed the CV macro F1 by +0.006 (LDA), +0.005 (logistic regression), 0.000 (QDA) and -0.001 (random forest), and a Yeo-Johnson power transform (Box-Cox is not usable because citric acid has zeros) by +0.002 (LDA), +0.002 (logistic regression), +0.028 (QDA) and -0.001 (random forest). All changes are within the fold std (0.005 to 0.018) except the power transform for QDA, a single model, so the rule (most models) is not met. LDA assumptions stay approximately met, and the report must say so | done |
 | Class imbalance | `class_distribution.png` | done |
 | Categorical encoding | Not needed, all features are numeric: say so explicitly | todo (write) |
 | Scaling | Done inside the model pipelines, to avoid leakage: explain | todo (write) |
@@ -64,8 +66,8 @@ Required sections, in this order:
 | Discriminant analysis: relevance, class separation, assumptions | `s4_discriminant_analysis.py`: skewness and standard deviation by class, correlated pairs, LDA vs QDA, `lda_projection.png` | done |
 | Resampling: cross-validation or bootstrap, justified | `evaluation.py` (stratified 5-fold CV on the training set, bootstrap for the test intervals) and `s10_resampling_comparison.py` (`resampling_comparison.csv`), which compares hold-out, 5-fold, 10-fold and leave-one-out with the numbers below | done (write the text) |
 | Distinguish resampling from class balancing | Explain: CV estimates performance, balancing changes the training weights or priors (the docstring of `s6_class_balancing.py` has the argument) | todo (write) |
-| Class balancing, if needed | `s6_class_balancing.py`: class weights (logistic regression, random forest) and equal priors (LDA) compared with the unbalanced version, `class_balancing_comparison.csv`. SMOTE was not tried (needs `imbalanced-learn`), say so in the limitations | done |
-| PCA: need, preprocessing, number of components, variance, effect | `s5_pca.py`: standardized first, 8 components reach 90% (Kaiser criterion keeps 3), PCA lowered every model in CV macro F1, so it is not used in the final models | done |
+| Class balancing, if needed | `s6_class_balancing.py`: class weights (logistic regression, random forest) and equal priors (LDA) compared with the unbalanced version, `class_balancing_comparison.csv`. Random over- and undersampling inside each training fold were also compared (see the resampling paragraph below). SMOTE was not tried (needs `imbalanced-learn`), say so in the limitations | done |
+| PCA: need, preprocessing, number of components, variance, effect | `s5_pca.py`: standardized first, 8 components reach 90% (Kaiser criterion keeps 3), PCA lowered every model in CV macro F1, so it is not used in the final models. It also saved no time: the 5-fold CV took 0.04 to 0.05 s (LDA), 0.07 to 0.08 s (logistic regression) and 0.55 to 0.56 s (random forest) with or without PCA (`pca_fit_time.csv`, wall time, machine-dependent), because the dataset is small | done |
 
 ### 3.4 Training and model comparison
 
@@ -94,15 +96,31 @@ Balancing results (5-fold CV on the training set, out-of-fold predictions):
 
 Balancing doubles the recall of the high class for LDA and logistic regression, at the cost of the medium class and about 3 points of accuracy. The report must state this trade-off.
 
+Balancing by resampling (Aula 17), same 5-fold CV, resampling applied only to the training part of each fold (validation folds keep the real proportions and contain no copies), models without class weights or priors; the first row of each pair repeats the weight/prior variant for comparison:
+
+| Model | Balancing | Accuracy | Macro F1 | Recall high | Recall medium |
+|---|---|---|---|---|---|
+| LDA | equal priors | 0.548 | 0.545 | 0.706 | 0.362 |
+| LDA | random oversampling | 0.549 | 0.546 | 0.715 | 0.363 |
+| LDA | random undersampling | 0.547 | 0.544 | 0.716 | 0.365 |
+| Logistic regression | balanced weights | 0.549 | 0.544 | 0.713 | 0.348 |
+| Logistic regression | random oversampling | 0.546 | 0.541 | 0.718 | 0.339 |
+| Logistic regression | random undersampling | 0.546 | 0.541 | 0.721 | 0.341 |
+| Random forest | balanced weights | 0.601 | 0.597 | 0.602 | 0.519 |
+| Random forest | random oversampling | 0.588 | 0.583 | 0.602 | 0.494 |
+| Random forest | random undersampling | 0.556 | 0.553 | 0.726 | 0.363 |
+
+For LDA and logistic regression, resampling is equivalent to equal priors or class weights (differences up to 0.003, inside the fold std of 0.005 to 0.008): reweighting the loss and duplicating rows produce practically the same classifier. For the random forest, balanced weights is best, oversampling is slightly lower (0.014, about the size of the fold std 0.018, since duplicated rows let the trees memorize) and undersampling is clearly worse (about 0.04) because it keeps only the smallest class size for every class (about 57% of the rows) and throws the rest away. The medium class always pays, and the high class gains. SMOTE (synthetic neighbours) was not run because `imbalanced-learn` is not installed and not in the pinned requirements, so only random resampling was evaluated.
+
 Tuning results (grid search, 5-fold CV on the training set, macro F1):
 
 | Model | Best parameters | CV macro F1 |
 |---|---|---|
 | LDA (equal priors) | `shrinkage="auto"`, `lsqr` solver | 0.547 |
 | Logistic regression (balanced) | `C=100` | 0.544 |
-| Random forest (balanced) | no depth limit, `min_samples_leaf=1`, 500 trees | 0.600 |
+| Random forest (balanced) | no depth limit, `min_samples_leaf=1`, 500 trees, `max_features="sqrt"` | 0.600 |
 
-These scores are optimistic, because the same folds choose the parameters and score them. Only the test set gives the final performance. LDA and logistic regression are almost flat across their grids, so tuning changes little for them. The random forest's best setting is at the edge of its grid.
+These scores are optimistic, because the same folds choose the parameters and score them. Only the test set gives the final performance. LDA and logistic regression are almost flat across their grids, so tuning changes little for them. The random forest grid also tuned `max_features` (sqrt, 0.5, 0.75 and 1.0, that is 3, 5, 8 and 11 of the 11 features; log2 was left out because it equals sqrt here). The best setting stayed the default `sqrt` with the same CV macro F1 of 0.600, and the other values were within one fold std (about 0.017), so `max_features` barely matters. The best setting is still at the edge of the grid (no depth limit, `min_samples_leaf=1`, 500 trees). The grid was revised once and not widened further: the edge suggests a larger forest might gain a little, inside the CV noise.
 
 Test set results (1064 wines, used once):
 
@@ -117,7 +135,7 @@ AUC is one-vs-rest (each class against the other two, using the predicted probab
 
 Paired bootstrap of the macro F1 difference (`test_paired_differences.csv`): random forest beats LDA by 0.046 (95% interval 0.016 to 0.076) and logistic regression by 0.062 (0.032 to 0.092), so its lead is real even though the separate intervals overlap. LDA vs logistic regression is borderline (0.016, interval 0.000 to 0.034). The random forest is also the best model by cross-validation, which is how the model is chosen without touching the test set.
 
-Per-class F1 on the test set: the random forest handles the medium class much better than LDA (0.597 against 0.492), because LDA with equal priors over-predicts the high class (recall 0.703, precision 0.440). The random forest confuses mostly neighbouring classes (low vs medium, medium vs high) and almost never low vs high (12 wines each way). The most important features of the forest are alcohol, density and volatile acidity.
+Per-class F1 on the test set: the random forest handles the medium class much better than LDA (0.597 against 0.492), because LDA with equal priors over-predicts the high class (recall 0.703, precision 0.440). The random forest confuses mostly neighbouring classes (low vs medium, medium vs high) and almost never low vs high (12 wines each way). Impurity importance (MDI) ranks alcohol, density and volatile acidity highest, but permutation importance on the test set (drop in macro F1, 10 repeats; `random_forest_permutation_importances.csv`, `random_forest_importance_comparison.png`) ranks alcohol (0.152), volatile acidity (0.046) and free SO₂ (0.025) highest. The two agree on alcohol and volatile acidity but not on density, which MDI ranks second and permutation seventh (0.013). MDI favours continuous features with many distinct values and density is correlated with alcohol, so the permutation ranking is the more reliable one. Residual sugar, fixed acidity and citric acid add almost nothing. The permutation importance is computed on the test set only for interpretation, after every decision was made.
 
 PCA results (5-fold CV on the training set, macro F1):
 
@@ -149,14 +167,14 @@ Reading: a single hold-out split moves the estimate 2 to 9 times more than 5-fol
 
 Preprocessing experiments (5-fold CV on the training set, macro F1 change against the untreated data, treatments learned inside each fold and every variant scored on the same wines):
 
-| Model | Remove extremes (z > 5) | Log of skewed features | Both | Fold std |
-|---|---|---|---|---|
-| LDA (equal priors) | -0.001 | +0.006 | +0.007 | 0.005 |
-| QDA | +0.021 | 0.000 | +0.019 | 0.013 |
-| Logistic regression (balanced) | -0.002 | +0.005 | +0.003 | 0.006 |
-| Random forest (balanced) | -0.004 | -0.001 | -0.005 | 0.018 |
+| Model | Remove extremes (z > 5) | Log of skewed features | Both | Power transform (Yeo-Johnson) | Fold std (untreated) |
+|---|---|---|---|---|---|
+| LDA (equal priors) | -0.001 | +0.006 | +0.007 | +0.002 | 0.005 |
+| QDA | +0.021 | 0.000 | +0.019 | +0.028 | 0.013 |
+| Logistic regression (balanced) | -0.002 | +0.005 | +0.003 | +0.002 | 0.006 |
+| Random forest (balanced) | -0.004 | -0.001 | -0.005 | -0.001 | 0.018 |
 
-Rule fixed before the run: adopt a treatment only if it beats the fold std for most models. None did, so the data is kept as is. The test set was not used.
+Rule fixed before the run: adopt a treatment only if it beats the fold std for most models. None did (the power transform beats it only for QDA, 1 of 4 models), so the data is kept as is. The test set was not used.
 
 ## 4. Points that must appear in the text
 
