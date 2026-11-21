@@ -35,6 +35,29 @@ def load_raw_data(file_path: Path = RAW_DATA_PATH) -> pd.DataFrame:
     )
 
 
+def remove_duplicate_rows(data: pd.DataFrame) -> pd.DataFrame:
+    """Remove duplicated rows, keeping the first occurrence.
+
+    This must happen before the train and test split, otherwise the same
+    wine could land in both sets and inflate the test metrics. The exploratory
+    analysis uses it too, so it describes the same wines the models see.
+
+    Args:
+        data: DataFrame with the dataset.
+
+    Returns:
+        DataFrame without duplicated rows and with a fresh index.
+    """
+    number_of_rows_before = len(data)
+    cleaned_data = data.drop_duplicates().reset_index(drop=True)
+
+    print(f"Rows before: {number_of_rows_before}")
+    print(f"Duplicated rows removed: {number_of_rows_before - len(cleaned_data)}")
+    print(f"Rows after: {len(cleaned_data)}")
+
+    return cleaned_data
+
+
 def create_quality_class(quality_scores: pd.Series) -> pd.Series:
     """Group the numeric quality score into ordered classes.
 

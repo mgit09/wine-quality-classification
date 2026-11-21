@@ -41,7 +41,11 @@ wine-quality-classification/
 │   │   ├── s1_inspect_data.py
 │   │   ├── s2_exploratory_data_analysis.py
 │   │   ├── s3_preprocessing.py
-│   │   └── s4_discriminant_analysis.py
+│   │   ├── s4_discriminant_analysis.py
+│   │   ├── s5_pca.py
+│   │   ├── s6_class_balancing.py
+│   │   ├── s7_model_tuning.py
+│   │   └── s8_final_evaluation.py
 │   ├── config.py
 │   ├── data_loading.py
 │   ├── evaluation.py
@@ -106,6 +110,10 @@ python -m src.steps.s1_inspect_data
 python -m src.steps.s2_exploratory_data_analysis
 python -m src.steps.s3_preprocessing
 python -m src.steps.s4_discriminant_analysis
+python -m src.steps.s5_pca
+python -m src.steps.s6_class_balancing
+python -m src.steps.s7_model_tuning
+python -m src.steps.s8_final_evaluation
 ```
 
 ## Working with Branches

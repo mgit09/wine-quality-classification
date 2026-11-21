@@ -1,0 +1,269 @@
+"""Evaluate the tuned models once on the held-out test set and compare them.
+
+The test set was never used to choose parameters, so these are the final
+estimates. The best model is chosen from the cross-validation score of the
+tuning step, and not from the test score, to keep the test set untouched by
+any decision. A bootstrap interval shows how much each score could change with
+a different sample of wines, which tells whether the differences between the
+models are meaningful.
+"""
+
+import joblib
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from sklearn.base import BaseEstimator
+from sklearn.dummy import DummyClassifier
+from sklearn.metrics import f1_score
+
+from src.config import (
+    BOOTSTRAP_ITERATIONS,
+    CONFIDENCE_LEVEL,
+    MODELS_DIR,
+    RANDOM_STATE,
+    TABLES_DIR,
+    TEST_DATA_PATH,
+    TRAIN_DATA_PATH,
+    TUNING_SCORING,
+)
+from src.data_loading import load_processed_data, split_features_and_target
+from src.evaluation import (
+    calculate_test_metrics,
+    create_per_class_report,
+    plot_confusion_matrix,
+)
+from src.outputs import save_figure, save_table
+
+MODEL_DISPLAY_NAMES = {
+    "lda": "LDA",
+    "logistic_regression": "Logistic regression",
+    "random_forest": "Random forest",
+}
+
+
+def load_tuned_models() -> dict[str, BaseEstimator]:
+    """Load the models saved by the tuning step.
+
+    Returns:
+        Dictionary from the model key to the fitted model.
+
+    Raises:
+        FileNotFoundError: If the tuning step was not run yet.
+    """
+    models = {}
+    for model_key in MODEL_DISPLAY_NAMES:
+        model_path = MODELS_DIR / f"{model_key}.joblib"
+        if not model_path.exists():
+            raise FileNotFoundError(
+                f"{model_path} not found, run s7_model_tuning first"
+            )
+        models[model_key] = joblib.load(model_path)
+    return models
+
+
+def bootstrap_macro_f1_interval(
+    true_labels: pd.Series,
+    predicted_labels: pd.Series,
+) -> tuple[float, float]:
+    """Estimate a confidence interval of the macro F1 by bootstrap.
+
+    The test wines are resampled with replacement, and the macro F1 of the
+    same predictions is computed on each resample.
+
+    Args:
+        true_labels: Real quality classes of the test set.
+        predicted_labels: Classes predicted by the model.
+
+    Returns:
+        Lower and upper limits of the confidence interval.
+    """
+    random_generator = np.random.default_rng(RANDOM_STATE)
+    true_array = true_labels.to_numpy()
+    predicted_array = np.asarray(predicted_labels)
+
+    scores = []
+    for _ in range(BOOTSTRAP_ITERATIONS):
+        sample = random_generator.integers(0, len(true_array), len(true_array))
+        scores.append(
+            f1_score(
+                true_array[sample],
+                predicted_array[sample],
+                average="macro",
+                zero_division=0,
+            )
+        )
+
+    tail = (1 - CONFIDENCE_LEVEL) / 2
+    lower, upper = np.quantile(scores, [tail, 1 - tail])
+    return float(lower), float(upper)
+
+
+def bootstrap_macro_f1_difference(
+    true_labels: pd.Series,
+    predicted_labels_a: np.ndarray,
+    predicted_labels_b: np.ndarray,
+) -> tuple[float, float, float]:
+    """Estimate the macro F1 difference between two models by paired bootstrap.
+
+    Both models are scored on the same resampled wines, so the difference is
+    not blurred by the sample-to-sample variation that the two models share.
+    An interval that excludes zero means the first model is really better.
+
+    Args:
+        true_labels: Real quality classes of the test set.
+        predicted_labels_a: Classes predicted by the first model.
+        predicted_labels_b: Classes predicted by the second model.
+
+    Returns:
+        Mean difference and the lower and upper limits of its interval.
+    """
+    random_generator = np.random.default_rng(RANDOM_STATE)
+    true_array = true_labels.to_numpy()
+
+    differences = []
+    for _ in range(BOOTSTRAP_ITERATIONS):
+        sample = random_generator.integers(0, len(true_array), len(true_array))
+        scores = [
+            f1_score(
+                true_array[sample],
+                predicted_labels[sample],
+                average="macro",
+                zero_division=0,
+            )
+            for predicted_labels in (predicted_labels_a, predicted_labels_b)
+        ]
+        differences.append(scores[0] - scores[1])
+
+    tail = (1 - CONFIDENCE_LEVEL) / 2
+    lower, upper = np.quantile(differences, [tail, 1 - tail])
+    return float(np.mean(differences)), float(lower), float(upper)
+
+
+def compare_models_in_pairs(
+    true_labels: pd.Series,
+    predictions: dict[str, np.ndarray],
+) -> pd.DataFrame:
+    """Compare every pair of real models with the paired bootstrap.
+
+    Args:
+        true_labels: Real quality classes of the test set.
+        predictions: Predictions of each model, by display name.
+
+    Returns:
+        DataFrame with the macro F1 difference of each pair and its interval.
+    """
+    model_names = [name for name in predictions if name != "Majority class"]
+
+    rows = {}
+    for first_index, first_name in enumerate(model_names):
+        for second_name in model_names[first_index + 1 :]:
+            mean, lower, upper = bootstrap_macro_f1_difference(
+                true_labels,
+                np.asarray(predictions[first_name]),
+                np.asarray(predictions[second_name]),
+            )
+            rows[f"{first_name} - {second_name}"] = {
+                "mean_difference": mean,
+                "ci_lower": lower,
+                "ci_upper": upper,
+            }
+    return pd.DataFrame(rows).T
+
+
+def plot_feature_importances(model: BaseEstimator, feature_names: list[str]) -> None:
+    """Plot and save the feature importances of the random forest.
+
+    Args:
+        model: Fitted random forest.
+        feature_names: Names of the features, in the training order.
+    """
+    importances = pd.Series(model.feature_importances_, index=feature_names)
+    importances = importances.sort_values()
+    save_table(importances.to_frame("importance"), "random_forest_importances.csv")
+
+    figure, axis = plt.subplots(figsize=(7, 5))
+    axis.barh(importances.index, importances.values)
+    axis.set_xlabel("Importance")
+    save_figure(figure, "random_forest_importances.png")
+
+
+def create_baseline_predictions(
+    train_features: pd.DataFrame,
+    train_target: pd.Series,
+    test_features: pd.DataFrame,
+) -> np.ndarray:
+    """Predict the most frequent class for every test wine.
+
+    Any useful model must beat this reference.
+
+    Args:
+        train_features: Feature matrix of the training set.
+        train_target: Quality class of each training row.
+        test_features: Feature matrix of the test set.
+
+    Returns:
+        Array with the most frequent training class repeated for each wine.
+    """
+    baseline = DummyClassifier(strategy="most_frequent")
+    return baseline.fit(train_features, train_target).predict(test_features)
+
+
+def main() -> None:
+    """Evaluate every tuned model on the test set and save the comparison."""
+    train_features, train_target = split_features_and_target(
+        load_processed_data(TRAIN_DATA_PATH)
+    )
+    test_features, test_target = split_features_and_target(
+        load_processed_data(TEST_DATA_PATH)
+    )
+
+    models = load_tuned_models()
+    predictions = {
+        "Majority class": create_baseline_predictions(
+            train_features, train_target, test_features
+        )
+    }
+    for model_key, model in models.items():
+        predictions[MODEL_DISPLAY_NAMES[model_key]] = model.predict(test_features)
+
+    rows = {}
+    for model_name, predicted in predictions.items():
+        metrics = calculate_test_metrics(test_target, predicted)
+        lower, upper = bootstrap_macro_f1_interval(test_target, predicted)
+        metrics["f1_macro_ci_lower"] = lower
+        metrics["f1_macro_ci_upper"] = upper
+        rows[model_name] = metrics
+
+        # Per-class table and confusion matrix of the real models
+        if model_name != "Majority class":
+            file_key = model_name.lower().replace(" ", "_")
+            report = create_per_class_report(test_target, predicted)
+            save_table(report, f"test_report_{file_key}.csv")
+            plot_confusion_matrix(
+                test_target,
+                predicted,
+                title=model_name,
+                file_name=f"confusion_matrix_{file_key}.png",
+            )
+
+    comparison = pd.DataFrame(rows).T
+    print("Test set results:")
+    print(comparison.round(3).to_string())
+    save_table(comparison, "test_comparison.csv")
+
+    # A pair differs for real only if its interval excludes zero
+    pairs = compare_models_in_pairs(test_target, predictions)
+    print("\nPaired bootstrap of the macro F1 difference:")
+    print(pairs.round(3).to_string())
+    save_table(pairs, "test_paired_differences.csv")
+
+    # The model is chosen from the CV score, so the test set stays untouched
+    tuning = pd.read_csv(TABLES_DIR / "tuning_best_parameters.csv", index_col=0)
+    best_key = tuning[f"cv_{TUNING_SCORING}"].astype(float).idxmax()
+    print(f"\nBest model by cross-validation: {MODEL_DISPLAY_NAMES[best_key]}")
+
+    plot_feature_importances(models["random_forest"], train_features.columns.tolist())
+
+
+if __name__ == "__main__":
+    main()

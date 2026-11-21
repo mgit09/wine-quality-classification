@@ -1,10 +1,12 @@
 """Helpers to save figures and tables in the results directory."""
 
+import joblib
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.figure import Figure
+from sklearn.base import BaseEstimator
 
-from src.config import FIGURES_DIR, TABLES_DIR
+from src.config import FIGURES_DIR, MODELS_DIR, TABLES_DIR
 
 
 def save_figure(figure: Figure, file_name: str) -> None:
@@ -28,3 +30,14 @@ def save_table(table: pd.DataFrame, file_name: str) -> None:
     """
     TABLES_DIR.mkdir(parents=True, exist_ok=True)
     table.to_csv(TABLES_DIR / file_name)
+
+
+def save_model(model: BaseEstimator, file_name: str) -> None:
+    """Save a fitted model in the models directory.
+
+    Args:
+        model: Fitted model or pipeline.
+        file_name: Name of the output file, including the extension.
+    """
+    MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    joblib.dump(model, MODELS_DIR / file_name)
