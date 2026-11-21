@@ -1,17 +1,19 @@
-"""Test whether removing extreme wines or log-transforming skewed features helps.
+"""Test whether removing extreme wines or transforming skewed features helps.
 
 The exploratory analysis found a few extreme points (such as a density of 1.039
 and a residual sugar of 65.8 in the same wine) and several right-skewed
-features, while LDA and QDA assume normal classes. Instead of deciding by eye,
-each treatment is compared with the untreated data under the same stratified
+features, while LDA and QDA assume normal classes. Both a log transform and a
+Yeo-Johnson power transform of the skewed features are tested. Instead of
+deciding by eye, each treatment is compared with the untreated data under the same stratified
 cross-validation, and only the training set is used, so the test set stays
 untouched.
 
-Both treatments are applied inside each fold, learned from the training part
+The treatments are applied inside each fold, learned from the training part
 only: extreme rows are removed from the training part but the validation part
 keeps every wine, so all variants are scored on exactly the same wines. A
 treatment is worth adopting only if it improves the macro F1 by more than the
-fold-to-fold standard deviation, for most models.
+fold-to-fold standard deviation, for most models (this rule is the same for
+every treatment, including the power transform).
 """
 
 import numpy as np
@@ -20,7 +22,7 @@ from sklearn.base import BaseEstimator, clone
 from sklearn.compose import ColumnTransformer
 from sklearn.metrics import f1_score
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import FunctionTransformer
+from sklearn.preprocessing import FunctionTransformer, PowerTransformer
 
 from src.config import EXTREME_Z_SCORE, SKEWNESS_THRESHOLD, TRAIN_DATA_PATH
 from src.data_loading import load_processed_data, split_features_and_target
@@ -65,6 +67,29 @@ def add_log_transform(model: BaseEstimator, columns: list[str]) -> Pipeline:
         remainder="passthrough",
     )
     return Pipeline([("log", log_transform), ("model", model)])
+
+
+def add_power_transform(model: BaseEstimator, columns: list[str]) -> Pipeline:
+    """Put a Yeo-Johnson power transform of some columns before a model.
+
+    Yeo-Johnson is used instead of Box-Cox because Box-Cox needs strictly
+    positive values and citric acid has zeros; Yeo-Johnson is defined for any
+    value. The exponent of each column is learned from the training part only.
+    standardize is False so the output keeps the scale of the data, as in the
+    log variant: the models that need scaling already scale it themselves.
+
+    Args:
+        model: Untrained model or pipeline.
+        columns: Names of the columns to transform.
+
+    Returns:
+        Pipeline that transforms the columns and then runs the model.
+    """
+    power_transform = ColumnTransformer(
+        [("power", PowerTransformer(method="yeo-johnson", standardize=False), columns)],
+        remainder="passthrough",
+    )
+    return Pipeline([("power", power_transform), ("model", model)])
 
 
 def find_non_extreme_rows(features: pd.DataFrame) -> pd.Series:
@@ -140,7 +165,7 @@ def compare_treatments(features: pd.DataFrame, target: pd.Series) -> pd.DataFram
         the macro F1 against the untreated data.
     """
     skewed_features = find_skewed_features(features)
-    print("Features log-transformed:", skewed_features)
+    print("Features transformed:", skewed_features)
 
     models = {
         "LDA": create_scaled_linear_discriminant_analysis(use_equal_priors=True),
@@ -149,17 +174,18 @@ def compare_treatments(features: pd.DataFrame, target: pd.Series) -> pd.DataFram
         "Random forest": create_random_forest(),
     }
     treatments = {
-        "none": (False, False),
-        "remove extremes": (True, False),
-        "log skewed": (False, True),
-        "both": (True, True),
+        "none": (False, None),
+        "remove extremes": (True, None),
+        "log skewed": (False, add_log_transform),
+        "both": (True, add_log_transform),
+        "power transform": (False, add_power_transform),
     }
 
     rows = {}
     for model_name, model in models.items():
-        for treatment_name, (remove_extremes, use_log) in treatments.items():
+        for treatment_name, (remove_extremes, add_transform) in treatments.items():
             treated_model = (
-                add_log_transform(model, skewed_features) if use_log else model
+                add_transform(model, skewed_features) if add_transform else model
             )
             metrics, f1_std, number_removed = cross_validate_variant(
                 treated_model, features, target, remove_extremes
