@@ -5,11 +5,6 @@ Final project for the Machine Learning course (2026/2) at the Federal University
 This project investigates wine quality (red and white wines) based on 11 physicochemical properties, applying exploratory data analysis, discriminant analysis, resampling techniques, Principal Component Analysis (PCA), and comparison of machine learning models.
 
 
-## Status
-
-The analysis pipeline (steps `s1` to `s10`) is complete: exploratory analysis, discriminant analysis, PCA, class balancing, model tuning, a single final evaluation on the test set the preprocessing experiments and a comparison of validation methods. Every decision and its numbers are listed in `docs/report_requirements.md`. The IEEE report and the presentation are still to be written.
-
-
 ## Dataset
 
 - Dataset: **wine_quality** (OpenML, ID 287)
