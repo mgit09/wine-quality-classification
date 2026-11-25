@@ -25,9 +25,6 @@ wine-quality-classification/
 ├── data/
 │   ├── raw/
 │   └── processed/
-│
-├── presentation/
-├── reports/
 ├── results/
 │   ├── figures/
 │   └── tables/
